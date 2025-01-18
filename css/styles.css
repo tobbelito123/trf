@@ -1,0 +1,113 @@
+﻿/* --- Exempel på CSS för "fyrafärgslayout" och snyggare kort --- */
+
+/* Grundläggande styling för kort */
+.card {
+	display: inline-block;
+	width: 60px;
+	height: 90px;
+	margin: 4px;
+	border-radius: 6px;
+	background-color: #fff;
+	border: 2px solid #000;
+	font-size: 20px;
+	text-align: center;
+	line-height: 90px;
+	position: relative;
+	user-select: none; /* Hindra markeringsmarkörer när man klickar */
+	font-family: "Verdana", sans-serif;
+	transition: transform 0.2s, border 0.2s;
+}
+
+	/* Hover-effekt när man "funderar på" att klicka på ett kort */
+	.card:hover {
+		transform: translateY(-5px);
+	}
+
+	/* --- Färgkodning av suits (4-färgslayout) --- */
+	.card.spade {
+		color: black; /* ♠ */
+	}
+
+	.card.heart {
+		color: red; /* ♥ */
+	}
+
+	.card.diamond {
+		color: blue; /* ♦ */
+	}
+
+	.card.club {
+		color: green; /* ♣ */
+	}
+
+	/* När kortet är "baksida" */
+	.card.back {
+		background-color: #444;
+		color: #444; /* text dolt */
+		cursor: not-allowed;
+	}
+
+	/* Om vi inte har ett riktigt kortobjekt (t.ex. leken tog slut) */
+	.card.unknown {
+		background-color: #ccc;
+		color: #999;
+		cursor: not-allowed;
+	}
+
+	/* När spelaren markerar kort för byte */
+	.card.selected {
+		border: 3px solid orange;
+		transform: translateY(-7px);
+	}
+
+/* --- Spelaryta och aktiv spelare --- */
+.player-area {
+	margin: 10px 0;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background-color: #eee;
+}
+
+	.player-area.active-player {
+		background-color: #ffeecb;
+		transition: background-color 0.5s;
+	}
+
+/* --- Övriga ytor --- */
+#status {
+	font-weight: bold;
+	margin-bottom: 10px;
+	font-size: 18px;
+}
+
+#scoreboard {
+	margin: 10px 0;
+	font-size: 16px;
+}
+
+#log {
+	height: 100px;
+	overflow-y: auto;
+	background-color: #f9f9f9;
+	border: 1px solid #ccc;
+	padding: 4px;
+	margin-bottom: 10px;
+}
+
+/* --- Förbättrad kortdesign --- */
+.card {
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+	.card.back {
+		background-image: linear-gradient(135deg, #444, #666);
+	}
+
+	.card.heart, .card.diamond {
+		font-weight: bold;
+	}
+
+	.card.selected:hover {
+		transform: translateY(-10px);
+	}
