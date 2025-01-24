@@ -11,17 +11,17 @@
         }
 
         body {
-            background: #222;
+            background: #333;
             font-family: sans-serif;
-            user-select: none; /* Undvik textmarkering */
+            user-select: none; /* Undvik att markera text när man drar */
             touch-action: none; /* Hantera egen touch */
         }
 
-        canvas {
+        #gameCanvas {
             display: block;
-            margin: 0 auto;
-            background: #eee;
-            border: 1px solid #555;
+            margin: 20px auto;
+            background: #dddddd; /* Bakgrund på själva “spel-ytan” */
+            border: 2px solid #555;
         }
 
         #info {
@@ -46,125 +46,110 @@
     <script>
 /*
   Enkelt 2D-spel med:
-  - Motorcykel som rullar åt höger (vi scrollar hindren åt vänster).
-  - Hinder och ramper som man måste hoppa över.
-  - Blå powerup före en ramp ger extra högt hopp (gäller ett hopp).
-  - Uppåtpil eller touch på skärm för att hoppa.
+  - Motorcykel som “rullar” åt höger (vi scrollar hinder åt vänster).
+  - Motorn startar direkt (fart finns).
+  - Hoppa med uppåtpilen (PC) eller tryck på skärmen (mobil).
+  - Hinder, ramp + powerup kan dyka upp.
 */
 
 // === Canvas & kontext ===
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// === Spelets storlek och grunddata ===
+// === Spelets storlek ===
 const W = canvas.width;
 const H = canvas.height;
 
-// Motorcykelns data
+// === Marknivå & färger ===
+const floorY = H - 40;  // Markens y-koord
+const floorColor = "#999";
+
+// === Motorcykelns data ===
 const bike = {
-  x: 50,         // Motorcykelns x-position på skärmen
-  y: H - 70,     // Startar nära marken
-  w: 60,         // Bredd på bilden
-  h: 40,         // Höjd på bilden
-  vy: 0,         // Vertikal hastighet
-  gravity: 0.5,  // Tyngdacceleration
-  jumpPower: 15, // Hur högt den hoppar normalt
-  canJump: true, // Kan vi hoppa nu? (true när man står på marken)
-  powerupActive: false, // Om vi har plockat upp en powerup som ger extra hopp
-  powerupJump: 25 // Extravärde på hopp när powerup är aktiv
+  x: 50,           // Motorcykelns X-pos
+  y: floorY - 60,  // Startar ovanför marken
+  w: 60,
+  h: 40,
+  vy: 0,           // Vertikal hastighet
+  gravity: 0.6,    // Tyngdacc
+  jumpPower: 15,   // Normalt hopp
+  canJump: true,
+  powerupActive: false, // Extra hopp vid powerup
+  powerupJump: 25,
 };
 
-// Ladda en enkel motorcykelbild (exempel) – liten dataURL för demonstration
+// === Liten motorcykel-bild (base64) ===
 const bikeImg = new Image();
 bikeImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAKCAYAAACMb6HQAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA8UlEQVQoz6WR0U3EMAxFef2/ERzANuWbeDW7AHoAIsBH4ygFpBM+DW5hZxVawPNk8dpq918/pK01BRIVITAFmgBYd7CbcC2yZAugKhINZ0kmCCJAI22ltQzkp73xZ+LyY3ZrALYB+u3yImN12Wn64LY2/ARA1YUWeXhFiZ0MyF6ld2XlM3MgX9CKK3cvMuu6XIhr7zqJnhIzK0BiZAVaSrp+BK/Pgjt346D9H9oaN/omTQckOnIS7vm+Z+m47HZtUnANfSYAAAAASUVORK5CYII=";
 
-// Marknivå
-const floorY = H - 30; // Markens y-koordinat
-
-// Hinder- & ramp-objektet
-// type = "obstacle" | "ramp" | "powerup"
-// x, y, w, h
+// === Hinder & timing ===
 let obstacles = [];
-
-// Tidtagning för slumpad spawn
 let frameCount = 0;
-let gameSpeed = 3;   // Hastighet varmed hinder rör sig åt vänster (illusion av rörelse framåt)
-let spawnInterval = 120; // Var 120 frames (~2s) spawna något
+const spawnInterval = 90; // var ~1.5 sekunder
+let gameSpeed = 4;        // hur fort hindren rullar åt vänster
 
-// === Inmatning ===
-let isKeyDown = false; // om uppåtpil är nedtryckt
+// === Initiera spelet när bilden laddats ===
+bikeImg.onload = () => {
+  init();
+};
 
-// === Setup ===
+// === init ===
 function init() {
   // Tangentbord
-  window.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp") {
-      jump();
-      isKeyDown = true;
-    }
-  });
-  window.addEventListener("keyup", e => {
-    if (e.key === "ArrowUp") {
-      isKeyDown = false;
-    }
-  });
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
 
   // Touch (mobil)
-  window.addEventListener("touchstart", e => {
-    jump();
-  });
+  window.addEventListener("touchstart", onTouchStart);
 
+  // Starta spel-loopen
   requestAnimationFrame(gameLoop);
+}
+
+// === Inmatning tangentbord (endast upp-pil) ===
+let upKeyPressed = false;
+function onKeyDown(e) {
+  if (e.key === "ArrowUp") {
+    if (!upKeyPressed) jump();
+    upKeyPressed = true;
+  }
+}
+function onKeyUp(e) {
+  if (e.key === "ArrowUp") {
+    upKeyPressed = false;
+  }
+}
+
+// === Inmatning touch (mobil) => hoppa ===
+function onTouchStart(e) {
+  jump();
 }
 
 // === Hoppa ===
 function jump() {
-  if (!bike.canJump) return; // Kan bara hoppa om man är på marken
-  // Kolla om vi har en powerup
+  if (!bike.canJump) return;
+  // Om powerup är aktiv => extra högt hopp
   if (bike.powerupActive) {
-    // Extra högt hopp en gång
     bike.vy = -bike.powerupJump;
     bike.powerupActive = false;
   } else {
-    // Vanligt hopp
     bike.vy = -bike.jumpPower;
   }
   bike.canJump = false;
 }
 
-// === Skapa hinder, ramp, powerup ===
-function spawnObstacle(type, x, w, h, y) {
-  // Default: y placeras vid marken
-  // men om vi t.ex. vill placera en ramp lägre, justera.
-  obstacles.push({ type, x, y, w, h });
+// === Spelloop: update + draw ===
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
 }
 
-// === Slumpa fram hinder och ramp + powerup ===
-function spawnRandom() {
-  // T.ex. 1 av 8 chanser att spawna ramp (med powerup)
-  // 4 av 8 chanser = vanligt hinder
-  // 3 av 8 chanser = ingenting (blir lucka)
-  const r = Math.floor(Math.random() * 8);
-  if (r <= 3) {
-    // Vanligt hinder
-    //  y = floorY - 20 => block 20 pix högt
-    spawnObstacle("obstacle", W + 10, 20, 20, floorY - 20);
-  } else if (r === 4) {
-    // Ramp + powerup strax innan
-    // 1) powerup
-    spawnObstacle("powerup", W + 10, 15, 15, floorY - 15);
-    // 2) ramp
-    spawnObstacle("ramp", W + 40, 40, 20, floorY - 20);
-  } else {
-    // Ingenting
-  }
-}
-
-// === Uppdatering av spelet ===
+// === Update ===
 function update() {
   frameCount++;
 
-  // Motorcykelns fysik (gravitation)
+  // Motorcykelns gravitation
   bike.y += bike.vy;
   bike.vy += bike.gravity;
 
@@ -172,33 +157,29 @@ function update() {
   if (bike.y + bike.h >= floorY) {
     bike.y = floorY - bike.h;
     bike.vy = 0;
-    bike.canJump = true; // åter kan hoppa
+    bike.canJump = true;
   }
 
-  // Skrolla hinder åt vänster
+  // Skrolla hinder
   for (let i = 0; i < obstacles.length; i++) {
     obstacles[i].x -= gameSpeed;
 
-    // Kolla kollision
+    // Kollision?
     if (checkCollision(bike, obstacles[i])) {
       if (obstacles[i].type === "obstacle") {
-        // Krasch => reset?
-        // Här kan man göra "Game Over" etc. Vi kör enkel reset.
+        // Krock => reset
         resetGame();
         return;
       } else if (obstacles[i].type === "powerup") {
-        // Aktivera powerup => ta bort powerup
         bike.powerupActive = true;
         obstacles.splice(i, 1);
         i--;
       } else if (obstacles[i].type === "ramp") {
-        // Om man precis "träffar" rampen på marken => extra lyft
-        // Vi kan ge en liten knuff uppåt
+        // Om man "är på rampen"
         if (bike.y + bike.h >= obstacles[i].y) {
-          // Ställ cykeln ovanpå rampen
           bike.y = obstacles[i].y - bike.h;
           if (bike.canJump) {
-            // Om man hoppar från rampen => ge en extra liten skjuts
+            // Hoppar man från ramp => lite extra skjuts
             bike.vy = -bike.jumpPower * 1.2;
             bike.canJump = false;
           }
@@ -206,33 +187,32 @@ function update() {
       }
     }
   }
-
-  // Ta bort hinder som kommit långt till vänster
+  // Ta bort hinder som gått förbi vänsterkanten
   obstacles = obstacles.filter(obs => obs.x + obs.w > 0);
 
-  // Slumpa nya hinder / ramp / powerup
+  // Skapa nya hinder
   if (frameCount % spawnInterval === 0) {
     spawnRandom();
   }
 }
 
-// === Rita spelet ===
+// === Rita allt ===
 function draw() {
   ctx.clearRect(0, 0, W, H);
 
-  // Rita mark (en enkel linje el. rektangel)
-  ctx.fillStyle = "#ccc";
+  // Rita mark
+  ctx.fillStyle = floorColor;
   ctx.fillRect(0, floorY, W, H - floorY);
 
-  // Rita motorcykeln (bilden)
+  // Rita motorcykel
   ctx.drawImage(bikeImg, bike.x, bike.y, bike.w, bike.h);
 
-  // Rita hinder / ramp / powerups
+  // Rita hinder
   for (let obs of obstacles) {
     if (obs.type === "obstacle") {
-      ctx.fillStyle = "#555";
+      ctx.fillStyle = "#444";
     } else if (obs.type === "ramp") {
-      ctx.fillStyle = "#964B00"; // brun ramp
+      ctx.fillStyle = "#7b4a12"; // brun
     } else if (obs.type === "powerup") {
       ctx.fillStyle = "blue";
     }
@@ -240,39 +220,55 @@ function draw() {
   }
 }
 
-// === Kollisionscheck (enkel) ===
-function checkCollision(bike, obs) {
-  // Bike: x,y,w,h
-  // Obs:  x,y,w,h
-  // Retur true om de överlappar
+// === Skapa hinder / ramp / powerup ===
+function spawnRandom() {
+  // 3 slags spawns: hinder, ramp+powerup, eller inget
+  let r = Math.floor(Math.random() * 6);
+  if (r <= 2) {
+    // Vanligt hinder
+    let obsHeight = 30;
+    spawnObstacle("obstacle", W + 20, floorY - obsHeight, 20, obsHeight);
+  } else if (r === 3) {
+    // Ramp + powerup
+    // powerup lite innan ramp
+    spawnObstacle("powerup", W + 20, floorY - 15, 15, 15);
+    // ramp
+    spawnObstacle("ramp", W + 60, floorY - 20, 40, 20);
+  }
+  // i övrigt => inget
+}
+
+function spawnObstacle(type, x, topY, w, h) {
+  obstacles.push({
+    type: type,
+    x: x,
+    y: topY,
+    w: w,
+    h: h
+  });
+}
+
+// === Kollision: enkel rektangel-överlappar-rektangel ===
+function checkCollision(a, b) {
   return !(
-    bike.x + bike.w < obs.x ||
-    bike.x > obs.x + obs.w ||
-    bike.y + bike.h < obs.y ||
-    bike.y > obs.y + obs.h
+    a.x + a.w < b.x ||
+    a.x > b.x + b.w ||
+    a.y + a.h < b.y ||
+    a.y > b.y + b.h
   );
 }
 
-// === Game Over/Reset (enkel) ===
+// === Reset / “Game over” (enkel) ===
 function resetGame() {
   obstacles = [];
   bike.x = 50;
-  bike.y = H - 70;
+  bike.y = floorY - 60;
   bike.vy = 0;
   bike.powerupActive = false;
   frameCount = 0;
-  // Du kan även nollställa poäng m.m.
+  // Du kan även lägga in en “Game Over”-ruta, etc.
+  // Här nollställer vi bara direkt.
 }
-
-// === Spelloopen ===
-function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-
-// Starta
-init();
     </script>
 
 </body>
