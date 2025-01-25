@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<--﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
@@ -208,68 +208,96 @@ function draw() {
   ctx.drawImage(bikeImg, bike.x, bike.y, bike.w, bike.h);
 
   // Rita hinder
-  for (let obs of obstacles) {
-    if (obs.type === "obstacle") {
-      ctx.fillStyle = "#444";
-    } else if (obs.type === "ramp") {
-      ctx.fillStyle = "#7b4a12"; // brun
-    } else if (obs.type === "powerup") {
-      ctx.fillStyle = "blue";
-    }
-    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-  }
-}
+  for (let obs of obstacles) 
 
-// === Skapa hinder / ramp / powerup ===
-function spawnRandom() {
-  // 3 slags spawns: hinder, ramp+powerup, eller inget
-  let r = Math.floor(Math.random() * 6);
-  if (r <= 2) {
-    // Vanligt hinder
-    let obsHeight = 30;
-    spawnObstacle("obstacle", W + 20, floorY - obsHeight, 20, obsHeight);
-  } else if (r === 3) {
-    // Ramp + powerup
-    // powerup lite innan ramp
-    spawnObstacle("powerup", W + 20, floorY - 15, 15, 15);
-    // ramp
-    spawnObstacle("ramp", W + 60, floorY - 20, 40, 20);
-  }
-  // i övrigt => inget
-}
 
-function spawnObstacle(type, x, topY, w, h) {
-  obstacles.push({
-    type: type,
-    x: x,
-    y: topY,
-    w: w,
-    h: h
-  });
-}
+	-->
 
-// === Kollision: enkel rektangel-överlappar-rektangel ===
-function checkCollision(a, b) {
-  return !(
-    a.x + a.w < b.x ||
-    a.x > b.x + b.w ||
-    a.y + a.h < b.y ||
-    a.y > b.y + b.h
-  );
-}
+		<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styr Bollen</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
 
-// === Reset / “Game over” (enkel) ===
-function resetGame() {
-  obstacles = [];
-  bike.x = 50;
-  bike.y = floorY - 60;
-  bike.vy = 0;
-  bike.powerupActive = false;
-  frameCount = 0;
-  // Du kan även lägga in en “Game Over”-ruta, etc.
-  // Här nollställer vi bara direkt.
-}
+        #gameArea {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+        }
+
+        #ball {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="ball"></div>
+    </div>
+
+    <script>
+        const ball = document.getElementById('ball');
+        const gameArea = document.getElementById('gameArea');
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let ballX = 0;
+        let ballY = 0;
+
+        // Funktion för att hantera touchstart-event
+        function handleTouchStart(event) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+        }
+
+        // Funktion för att hantera touchmove-event
+        function handleTouchMove(event) {
+            event.preventDefault(); // Förhindra standardbeteende (t.ex. scroll)
+
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            // Beräkna förflyttningen
+            const deltaX = touchX - touchStartX;
+            const deltaY = touchY - touchStartY;
+
+            // Uppdatera bollens position
+            ballX += deltaX;
+            ballY += deltaY;
+
+            // Begränsa bollens position inom spelområdet
+            ballX = Math.max(0, Math.min(gameArea.offsetWidth - ball.offsetWidth, ballX));
+            ballY = Math.max(0, Math.min(gameArea.offsetHeight - ball.offsetHeight, ballY));
+
+            // Uppdatera bollens position på skärmen
+            ball.style.left = `${ballX}px`;
+            ball.style.top = `${ballY}px`;
+
+            // Uppdatera startpositionen för nästa beräkning
+            touchStartX = touchX;
+            touchStartY = touchY;
+        }
+
+        // Lägg till event listeners för touch-events
+        gameArea.addEventListener('touchstart', handleTouchStart);
+        gameArea.addEventListener('touchmove', handleTouchMove);
     </script>
-
 </body>
 </html>
