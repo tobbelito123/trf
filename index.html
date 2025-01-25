@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bollkamp Pro</title>
+    <title>Bollkamp Ultimate</title>
     <style>
         body, html {
             margin: 0;
@@ -41,7 +41,7 @@
             z-index: 1;
         }
 
-        #score {
+        #scoreContainer {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -55,33 +55,35 @@
 </head>
 <body>
     <div id="gameArea">
-        <div id="score">Poäng: 0</div>
+        <div id="scoreContainer">
+            <div>Poäng: <span id="score">0</span></div>
+            <div>Rekord: <span id="highscore">0</span></div>
+        </div>
         <div id="redBall" class="ball"></div>
         <div id="greenBall" class="ball"></div>
     </div>
 
     <script>
+        // Game state
         const redBall = document.getElementById('redBall');
         const greenBall = document.getElementById('greenBall');
         const gameArea = document.getElementById('gameArea');
         const scoreElement = document.getElementById('score');
-
-        // Game state
+        const highscoreElement = document.getElementById('highscore');
+        
         let redX = gameArea.offsetWidth/2 - 20;
         let redY = gameArea.offsetHeight/2 - 20;
         let greenX = 100;
         let greenY = 100;
         let score = 0;
-        let previousRedX = redX;
-        let previousRedY = redY;
-        let velocityX = 0;
-        let velocityY = 0;
-        
-        // Green ball physics
-        let greenSpeedX = 0;
-        let greenSpeedY = 0;
-        const friction = 0.99;
-        const maxSpeed = 15;
+        let lastCollisionTime = 0;
+        let greenSpeedX = 3;
+        let greenSpeedY = 2.5;
+        const COLLISION_COOLDOWN = 500; // 0.5 seconds
+
+        // Highscore system
+        let highscore = localStorage.getItem('highscore') || 0;
+        highscoreElement.textContent = highscore;
 
         // Initialize positions
         redBall.style.left = redX + 'px';
@@ -89,7 +91,7 @@
         greenBall.style.left = greenX + 'px';
         greenBall.style.top = greenY + 'px';
 
-        // Touch handling
+        // Fixed steering system (original version)
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -103,12 +105,13 @@
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
 
-            // Calculate movement relative to game area
-            const rect = gameArea.getBoundingClientRect();
-            redX += (touchX - touchStartX) - rect.left;
-            redY += (touchY - touchStartY) - rect.top;
+            const deltaX = touchX - touchStartX;
+            const deltaY = touchY - touchStartY;
 
-            // Contain red ball within game area
+            redX += deltaX;
+            redY += deltaY;
+
+            // Contain within game area
             redX = Math.max(0, Math.min(gameArea.offsetWidth - 40, redX));
             redY = Math.max(0, Math.min(gameArea.offsetHeight - 40, redY));
 
@@ -119,59 +122,62 @@
             touchStartY = touchY;
         }
 
-        // Physics engine
-        function updatePhysics() {
-            // Calculate red ball velocity
-            velocityX = redX - previousRedX;
-            velocityY = redY - previousRedY;
-            previousRedX = redX;
-            previousRedY = redY;
-
-            // Update green ball position with friction
+        // Perpetual motion physics
+        function updateGreenBall() {
             greenX += greenSpeedX;
             greenY += greenSpeedY;
-            greenSpeedX *= friction;
-            greenSpeedY *= friction;
 
-            // Wall collisions with momentum preservation
+            // Wall collisions with direction change
             if(greenX <= 0 || greenX >= gameArea.offsetWidth - 40) {
-                greenSpeedX *= -0.9;
+                greenSpeedX *= -1;
                 greenX = Math.max(0, Math.min(gameArea.offsetWidth - 40, greenX));
             }
             if(greenY <= 0 || greenY >= gameArea.offsetHeight - 40) {
-                greenSpeedY *= -0.9;
+                greenSpeedY *= -1;
                 greenY = Math.max(0, Math.min(gameArea.offsetHeight - 40, greenY));
             }
+
+            // Prevent complete stop
+            if(Math.abs(greenSpeedX) < 0.5) greenSpeedX += Math.sign(greenSpeedX) * 0.1;
+            if(Math.abs(greenSpeedY) < 0.5) greenSpeedY += Math.sign(greenSpeedY) * 0.1;
         }
 
-        // Collision handling
-        function handleCollisions() {
-            const dx = greenX - redX;
-            const dy = greenY - redY;
+        // Collision handling with cooldown
+        function checkCollision() {
+            const now = Date.now();
+            const dx = redX - greenX;
+            const dy = redY - greenY;
             const distance = Math.sqrt(dx*dx + dy*dy);
 
-            if(distance < 40) {
-                // Calculate collision vector
-                const angle = Math.atan2(dy, dx);
-                const redSpeed = Math.sqrt(velocityX*velocityX + velocityY*velocityY);
+            if(distance < 40 && now - lastCollisionTime > COLLISION_COOLDOWN) {
+                // Update score
+                score++;
+                scoreElement.textContent = score;
+                lastCollisionTime = now;
                 
-                // Transfer momentum
-                const force = Math.min(redSpeed * 2.5, maxSpeed);
+                // Update highscore
+                if(score > highscore) {
+                    highscore = score;
+                    highscoreElement.textContent = highscore;
+                    localStorage.setItem('highscore', highscore);
+                }
+
+                // Physics push
+                const angle = Math.atan2(dy, dx);
+                const force = 8;
                 greenSpeedX = Math.cos(angle) * force;
                 greenSpeedY = Math.sin(angle) * force;
 
-                // Update score and effects
-                score++;
-                scoreElement.textContent = `Poäng: ${score}`;
-                greenBall.style.transform = `scale(1.3) translate(${Math.cos(angle)*5}px, ${Math.sin(angle)*5}px)`;
-                setTimeout(() => greenBall.style.transform = 'scale(1) translate(0,0)', 200);
+                // Visual feedback
+                greenBall.style.transform = 'scale(1.3)';
+                setTimeout(() => greenBall.style.transform = 'scale(1)', 200);
             }
         }
 
-        // Render loop
+        // Game loop
         function gameLoop() {
-            updatePhysics();
-            handleCollisions();
+            updateGreenBall();
+            checkCollision();
             greenBall.style.left = greenX + 'px';
             greenBall.style.top = greenY + 'px';
             requestAnimationFrame(gameLoop);
