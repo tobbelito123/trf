@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bollkamp</title>
+    <title>Bollkamp Pro</title>
     <style>
         body, html {
             margin: 0;
@@ -28,6 +28,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
+            transition: transform 0.1s;
         }
 
         #redBall {
@@ -41,18 +42,20 @@
         }
 
         #score {
-            position: fixed;
+            position: absolute;
             top: 10px;
             right: 10px;
-            color: white;
+            color: black;
             font-size: 24px;
             font-weight: bold;
+            z-index: 3;
+            text-shadow: 1px 1px 2px white;
         }
     </style>
 </head>
 <body>
-    <div id="score">Poäng: 0</div>
     <div id="gameArea">
+        <div id="score">Poäng: 0</div>
         <div id="redBall" class="ball"></div>
         <div id="greenBall" class="ball"></div>
     </div>
@@ -63,24 +66,30 @@
         const gameArea = document.getElementById('gameArea');
         const scoreElement = document.getElementById('score');
 
-        // Startpositioner
+        // Game state
         let redX = gameArea.offsetWidth/2 - 20;
         let redY = gameArea.offsetHeight/2 - 20;
         let greenX = 100;
         let greenY = 100;
         let score = 0;
+        let previousRedX = redX;
+        let previousRedY = redY;
+        let velocityX = 0;
+        let velocityY = 0;
+        
+        // Green ball physics
+        let greenSpeedX = 0;
+        let greenSpeedY = 0;
+        const friction = 0.99;
+        const maxSpeed = 15;
 
-        // Hastigheter för gröna bollen
-        let greenSpeedX = 3;
-        let greenSpeedY = 2.5;
-
-        // Initiera positioner
+        // Initialize positions
         redBall.style.left = redX + 'px';
         redBall.style.top = redY + 'px';
         greenBall.style.left = greenX + 'px';
         greenBall.style.top = greenY + 'px';
 
-        // Touch-kontroller för röda bollen
+        // Touch handling
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -94,10 +103,12 @@
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
 
-            redX += touchX - touchStartX;
-            redY += touchY - touchStartY;
+            // Calculate movement relative to game area
+            const rect = gameArea.getBoundingClientRect();
+            redX += (touchX - touchStartX) - rect.left;
+            redY += (touchY - touchStartY) - rect.top;
 
-            // Begränsa röd boll inom spelområdet
+            // Contain red ball within game area
             redX = Math.max(0, Math.min(gameArea.offsetWidth - 40, redX));
             redY = Math.max(0, Math.min(gameArea.offsetHeight - 40, redY));
 
@@ -108,43 +119,61 @@
             touchStartY = touchY;
         }
 
-        // Fysikmotor för gröna bollen
-        function updateGreenBall() {
+        // Physics engine
+        function updatePhysics() {
+            // Calculate red ball velocity
+            velocityX = redX - previousRedX;
+            velocityY = redY - previousRedY;
+            previousRedX = redX;
+            previousRedY = redY;
+
+            // Update green ball position with friction
             greenX += greenSpeedX;
             greenY += greenSpeedY;
+            greenSpeedX *= friction;
+            greenSpeedY *= friction;
 
-            // Kollision med väggar
+            // Wall collisions with momentum preservation
             if(greenX <= 0 || greenX >= gameArea.offsetWidth - 40) {
-                greenSpeedX *= -1;
+                greenSpeedX *= -0.9;
+                greenX = Math.max(0, Math.min(gameArea.offsetWidth - 40, greenX));
             }
             if(greenY <= 0 || greenY >= gameArea.offsetHeight - 40) {
-                greenSpeedY *= -1;
+                greenSpeedY *= -0.9;
+                greenY = Math.max(0, Math.min(gameArea.offsetHeight - 40, greenY));
             }
-
-            greenBall.style.left = greenX + 'px';
-            greenBall.style.top = greenY + 'px';
         }
 
-        // Kollisionsdetektering
-        function checkCollision() {
-            const dx = (redX + 20) - (greenX + 20);
-            const dy = (redY + 20) - (greenY + 20);
+        // Collision handling
+        function handleCollisions() {
+            const dx = greenX - redX;
+            const dy = greenY - redY;
             const distance = Math.sqrt(dx*dx + dy*dy);
 
-            if(distance < 40) { // 20px radie + 20px radie
+            if(distance < 40) {
+                // Calculate collision vector
+                const angle = Math.atan2(dy, dx);
+                const redSpeed = Math.sqrt(velocityX*velocityX + velocityY*velocityY);
+                
+                // Transfer momentum
+                const force = Math.min(redSpeed * 2.5, maxSpeed);
+                greenSpeedX = Math.cos(angle) * force;
+                greenSpeedY = Math.sin(angle) * force;
+
+                // Update score and effects
                 score++;
                 scoreElement.textContent = `Poäng: ${score}`;
-                
-                // Visuell feedback vid kollision
-                greenBall.style.transform = 'scale(1.2)';
-                setTimeout(() => greenBall.style.transform = 'scale(1)', 100);
+                greenBall.style.transform = `scale(1.3) translate(${Math.cos(angle)*5}px, ${Math.sin(angle)*5}px)`;
+                setTimeout(() => greenBall.style.transform = 'scale(1) translate(0,0)', 200);
             }
         }
 
-        // Spelloop
+        // Render loop
         function gameLoop() {
-            updateGreenBall();
-            checkCollision();
+            updatePhysics();
+            handleCollisions();
+            greenBall.style.left = greenX + 'px';
+            greenBall.style.top = greenY + 'px';
             requestAnimationFrame(gameLoop);
         }
 
@@ -152,7 +181,7 @@
         gameArea.addEventListener('touchstart', handleTouchStart);
         gameArea.addEventListener('touchmove', handleTouchMove);
 
-        // Starta spelet
+        // Start game
         gameLoop();
     </script>
 </body>
