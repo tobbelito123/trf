@@ -64,6 +64,29 @@
     </div>
 
     <script>
+        // Audio initialization
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let isSoundEnabled = false;
+
+        function playSound(frequency = 440, duration = 0.1) {
+            if(!isSoundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'square';
+            oscillator.frequency.value = frequency;
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
         // Game state
         const redBall = document.getElementById('redBall');
         const greenBall = document.getElementById('greenBall');
@@ -79,7 +102,7 @@
         let lastCollisionTime = 0;
         let greenSpeedX = 3;
         let greenSpeedY = 2.5;
-        const COLLISION_COOLDOWN = 500; // 0.5 seconds
+        const COLLISION_COOLDOWN = 500;
 
         // Highscore system
         let highscore = localStorage.getItem('highscore') || 0;
@@ -91,11 +114,16 @@
         greenBall.style.left = greenX + 'px';
         greenBall.style.top = greenY + 'px';
 
-        // Fixed steering system (original version)
+        // Touch controls
         let touchStartX = 0;
         let touchStartY = 0;
 
         function handleTouchStart(e) {
+            if(!isSoundEnabled) {
+                audioContext.resume().then(() => {
+                    isSoundEnabled = true;
+                });
+            }
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
@@ -108,12 +136,8 @@
             const deltaX = touchX - touchStartX;
             const deltaY = touchY - touchStartY;
 
-            redX += deltaX;
-            redY += deltaY;
-
-            // Contain within game area
-            redX = Math.max(0, Math.min(gameArea.offsetWidth - 40, redX));
-            redY = Math.max(0, Math.min(gameArea.offsetHeight - 40, redY));
+            redX = Math.max(0, Math.min(gameArea.offsetWidth - 40, redX + deltaX));
+            redY = Math.max(0, Math.min(gameArea.offsetHeight - 40, redY + deltaY));
 
             redBall.style.left = redX + 'px';
             redBall.style.top = redY + 'px';
@@ -122,27 +146,27 @@
             touchStartY = touchY;
         }
 
-        // Perpetual motion physics
+        // Green ball physics
         function updateGreenBall() {
             greenX += greenSpeedX;
             greenY += greenSpeedY;
 
-            // Wall collisions with direction change
+            // Wall collisions
             if(greenX <= 0 || greenX >= gameArea.offsetWidth - 40) {
                 greenSpeedX *= -1;
-                greenX = Math.max(0, Math.min(gameArea.offsetWidth - 40, greenX));
+                playSound(300);
             }
             if(greenY <= 0 || greenY >= gameArea.offsetHeight - 40) {
                 greenSpeedY *= -1;
-                greenY = Math.max(0, Math.min(gameArea.offsetHeight - 40, greenY));
+                playSound(300);
             }
 
-            // Prevent complete stop
-            if(Math.abs(greenSpeedX) < 0.5) greenSpeedX += Math.sign(greenSpeedX) * 0.1;
-            if(Math.abs(greenSpeedY) < 0.5) greenSpeedY += Math.sign(greenSpeedY) * 0.1;
+            // Maintain minimum speed
+            greenSpeedX = Math.sign(greenSpeedX) * Math.max(0.5, Math.abs(greenSpeedX));
+            greenSpeedY = Math.sign(greenSpeedY) * Math.max(0.5, Math.abs(greenSpeedY));
         }
 
-        // Collision handling with cooldown
+        // Collision handling
         function checkCollision() {
             const now = Date.now();
             const dx = redX - greenX;
@@ -150,25 +174,27 @@
             const distance = Math.sqrt(dx*dx + dy*dy);
 
             if(distance < 40 && now - lastCollisionTime > COLLISION_COOLDOWN) {
-                // Update score
                 score++;
                 scoreElement.textContent = score;
                 lastCollisionTime = now;
-                
-                // Update highscore
+
+                // Highscore update
                 if(score > highscore) {
                     highscore = score;
                     highscoreElement.textContent = highscore;
                     localStorage.setItem('highscore', highscore);
+                    playSound(880, 0.3);
+                } else {
+                    playSound(660, 0.1);
                 }
 
-                // Physics push
+                // Physics reaction
                 const angle = Math.atan2(dy, dx);
-                const force = 8;
+                const force = 10;
                 greenSpeedX = Math.cos(angle) * force;
                 greenSpeedY = Math.sin(angle) * force;
 
-                // Visual feedback
+                // Visual effect
                 greenBall.style.transform = 'scale(1.3)';
                 setTimeout(() => greenBall.style.transform = 'scale(1)', 200);
             }
