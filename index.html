@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bollkamp Physics Edition</title>
+    <title>Bollkamp Ultimate Final</title>
     <style>
         body, html {
             margin: 0;
@@ -53,13 +53,16 @@
             text-shadow: 1px 1px 2px white;
         }
 
-        #particles-js {
+        .particle {
             position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
             pointer-events: none;
-            z-index: 4;
+            opacity: 0.8;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </head>
 <body>
     <div id="gameArea">
@@ -69,74 +72,55 @@
         </div>
         <div id="redBall" class="ball"></div>
         <div id="greenBall" class="ball"></div>
-        <div id="particles-js"></div>
     </div>
 
     <script>
-        // ========== PHYSICS CONFIG ==========
-        const FRICTION = 0.98;
-        const MIN_SPEED = 0.5;
-        const FORCE_MULTIPLIER = 12;
-        const SCREEN_SHAKE_FORCE = 3;
+        // ===== GAME CONFIG =====
+        const FRICTION = 0.985;
+        const MIN_SPEED = 2.0;
+        const FORCE_MULTIPLIER = 18;
+        const COLLISION_COOLDOWN = 300;
 
-        // ========== GAME STATE ==========
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // ===== GAME STATE =====
+        let audioContext;
         let isSoundEnabled = false;
         let redX, redY, greenX, greenY;
         let score = 0, lastCollisionTime = 0;
         let greenSpeedX = 3, greenSpeedY = 2.5;
         let previousRedX, previousRedY;
 
-        // ========== PARTICLES CONFIG ==========
-        particlesJS('particles-js', {
-            particles: {
-                number: { value: 0 },
-                color: { value: '#00ff00' },
-                shape: { type: 'circle' },
-                opacity: { value: 0.8 },
-                size: { value: 3 },
-                move: {
-                    enable: true,
-                    speed: 5,
-                    direction: 'none',
-                    random: true,
-                    straight: false,
-                    out_mode: 'destroy'
-                }
-            }
-        });
-
-        // ========== AUDIO SYSTEM ==========
-        function playSound(frequency = 440, duration = 0.1) {
-            if(!isSoundEnabled) return;
-            
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.type = 'square';
-            oscillator.frequency.value = frequency;
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + duration);
-        }
-
-        // ========== GAME INIT ==========
+        // ===== ELEMENTS =====
         const redBall = document.getElementById('redBall');
         const greenBall = document.getElementById('greenBall');
         const gameArea = document.getElementById('gameArea');
         const scoreElement = document.getElementById('score');
         const highscoreElement = document.getElementById('highscore');
-        
+
+        // ===== AUDIO SYSTEM =====
+        function playSound(freq, duration=0.2) {
+            if(!isSoundEnabled || !audioContext) return;
+            
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'square';
+            
+            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        // ===== INITIALIZATION =====
         function initGame() {
-            const areaRect = gameArea.getBoundingClientRect();
-            redX = areaRect.width/2 - 20;
-            redY = areaRect.height/2 - 20;
+            const rect = gameArea.getBoundingClientRect();
+            redX = rect.width/2 - 20;
+            redY = rect.height/2 - 20;
             greenX = 100;
             greenY = 100;
             
@@ -145,18 +129,17 @@
             greenBall.style.left = greenX + 'px';
             greenBall.style.top = greenY + 'px';
             
-            // Highscore system
             highscoreElement.textContent = localStorage.getItem('highscore') || 0;
         }
         initGame();
 
-        // ========== TOUCH CONTROLS ==========
+        // ===== TOUCH CONTROLS =====
         let touchStartX = 0, touchStartY = 0;
 
         function handleTouchStart(e) {
-            if(!isSoundEnabled) {
-                audioContext.resume().then(() => isSoundEnabled = true);
-            }
+            if(!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if(!isSoundEnabled) audioContext.resume().then(() => isSoundEnabled = true);
+            
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
             previousRedX = redX;
@@ -168,11 +151,14 @@
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
 
-            const deltaX = touchX - touchStartX;
-            const deltaY = touchY - touchStartY;
-
-            redX = Math.max(0, Math.min(gameArea.offsetWidth - 40, redX + deltaX));
-            redY = Math.max(0, Math.min(gameArea.offsetHeight - 40, redY + deltaY));
+            redX = Math.max(0, Math.min(
+                gameArea.offsetWidth - 40, 
+                redX + (touchX - touchStartX)
+            ));
+            redY = Math.max(0, Math.min(
+                gameArea.offsetHeight - 40, 
+                redY + (touchY - touchStartY)
+            ));
 
             redBall.style.left = redX + 'px';
             redBall.style.top = redY + 'px';
@@ -181,85 +167,82 @@
             touchStartY = touchY;
         }
 
-        // ========== PHYSICS ENGINE ==========
-        function calculateVelocity() {
-            return {
-                x: redX - previousRedX,
-                y: redY - previousRedY
-            };
-        }
+        // ===== PHYSICS ENGINE =====
+        function updatePhysics() {
+            // Apply friction while maintaining minimum speed
+            greenSpeedX = Math.sign(greenSpeedX) * Math.max(
+                MIN_SPEED, 
+                Math.abs(greenSpeedX * FRICTION)
+            );
+            greenSpeedY = Math.sign(greenSpeedY) * Math.max(
+                MIN_SPEED, 
+                Math.abs(greenSpeedY * FRICTION)
+            );
 
-        function applyPhysics() {
-            // Update green ball position
+            // Update position
             greenX += greenSpeedX;
             greenY += greenSpeedY;
 
-            // Apply friction
-            greenSpeedX *= FRICTION;
-            greenSpeedY *= FRICTION;
-
-            // Maintain minimum speed
-            if(Math.abs(greenSpeedX) < MIN_SPEED) greenSpeedX = MIN_SPEED * Math.sign(greenSpeedX);
-            if(Math.abs(greenSpeedY) < MIN_SPEED) greenSpeedY = MIN_SPEED * Math.sign(greenSpeedY);
-
             // Wall collisions
-            if(greenX <= 0 || greenX >= gameArea.offsetWidth - 40) {
+            const boundaryRight = gameArea.offsetWidth - 40;
+            const boundaryBottom = gameArea.offsetHeight - 40;
+            
+            if(greenX < 0 || greenX > boundaryRight) {
                 greenSpeedX *= -1;
-                playSound(300);
+                greenX = Math.max(0, Math.min(boundaryRight, greenX));
+                playSound(320);
             }
-            if(greenY <= 0 || greenY >= gameArea.offsetHeight - 40) {
+            if(greenY < 0 || greenY > boundaryBottom) {
                 greenSpeedY *= -1;
-                playSound(300);
+                greenY = Math.max(0, Math.min(boundaryBottom, greenY));
+                playSound(320);
             }
         }
 
-        // ========== COLLISION SYSTEM ==========
-        function createImpactEffect(x, y) {
-            // Particle burst
-            window.pJS_GUI.particles.array = [];
-            window.pJS_GUI.fn.vendors.destroypJS();
-            window.pJS_GUI = particlesJS('particles-js', {
-                particles: {
-                    number: { value: 15 },
-                    color: { value: '#00ff00' },
-                    shape: { type: 'circle' },
-                    opacity: { value: 0.8 },
-                    size: { value: 3 },
-                    move: {
-                        enable: true,
-                        speed: 8,
-                        direction: 'none',
-                        random: true,
-                        straight: false,
-                        out_mode: 'destroy'
-                    }
-                }
-            });
-
-            // Screen shake
-            gameArea.style.transform = `
-                translate(${Math.random() * SCREEN_SHAKE_FORCE}px, 
-                        ${Math.random() * SCREEN_SHAKE_FORCE}px)
-            `;
-            setTimeout(() => gameArea.style.transform = 'none', 100);
+        // ===== COLLISION SYSTEM =====
+        function createParticles(x, y) {
+            for(let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 20 + 'px';
+                particle.style.top = y + 20 + 'px';
+                
+                const angle = (Math.PI * 2 * i)/10;
+                const speed = 12;
+                
+                gameArea.appendChild(particle);
+                
+                requestAnimationFrame(() => {
+                    particle.style.transform = `translate(
+                        ${Math.cos(angle) * speed}px, 
+                        ${Math.sin(angle) * speed}px
+                    )`;
+                    particle.style.opacity = '0';
+                    
+                    setTimeout(() => particle.remove(), 400);
+                });
+            }
         }
 
-        function handleCollisions() {
+        function handleCollision() {
             const now = Date.now();
             const dx = redX - greenX;
             const dy = redY - greenY;
             const distance = Math.sqrt(dx*dx + dy*dy);
 
-            if(distance < 40 && now - lastCollisionTime > 500) {
+            if(distance < 40 && now - lastCollisionTime > COLLISION_COOLDOWN) {
                 // Calculate impact force
-                const velocity = calculateVelocity();
+                const redVelocity = {
+                    x: redX - previousRedX,
+                    y: redY - previousRedY
+                };
                 const angle = Math.atan2(dy, dx);
                 const force = Math.min(
-                    Math.sqrt(velocity.x**2 + velocity.y**2) * FORCE_MULTIPLIER,
-                    20
+                    Math.sqrt(redVelocity.x**2 + redVelocity.y**2) * FORCE_MULTIPLIER,
+                    25
                 );
 
-                // Apply directional force
+                // Apply physics
                 greenSpeedX = Math.cos(angle) * -force;
                 greenSpeedY = Math.sin(angle) * -force;
 
@@ -268,29 +251,36 @@
                 scoreElement.textContent = score;
                 lastCollisionTime = now;
 
-                // Highscore update
+                // Highscore handling
                 if(score > highscoreElement.textContent) {
-                    localStorage.setItem('highscore', score);
                     highscoreElement.textContent = score;
-                    playSound(880, 0.3);
+                    localStorage.setItem('highscore', score);
+                    playSound(900, 0.4);
                 } else {
-                    playSound(660, 0.1);
+                    playSound(600, 0.2);
                 }
 
                 // Visual effects
-                createImpactEffect(greenX, greenY);
-                greenBall.style.transform = 'scale(1.3)';
-                setTimeout(() => greenBall.style.transform = 'scale(1)', 200);
+                createParticles(greenX, greenY);
+                greenBall.style.transform = 'scale(1.4)';
+                gameArea.style.transform = `translate(
+                    ${(Math.random()-0.5)*6}px,
+                    ${(Math.random()-0.5)*6}px
+                )`;
+                setTimeout(() => {
+                    greenBall.style.transform = 'scale(1)';
+                    gameArea.style.transform = 'none';
+                }, 100);
             }
         }
 
-        // ========== GAME LOOP ==========
+        // ===== GAME LOOP =====
         function gameLoop() {
             previousRedX = redX;
             previousRedY = redY;
             
-            applyPhysics();
-            handleCollisions();
+            updatePhysics();
+            handleCollision();
             
             greenBall.style.left = greenX + 'px';
             greenBall.style.top = greenY + 'px';
@@ -298,11 +288,11 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // ========== EVENT LISTENERS ==========
+        // ===== EVENT LISTENERS =====
         gameArea.addEventListener('touchstart', handleTouchStart);
         gameArea.addEventListener('touchmove', handleTouchMove);
 
-        // ========== START GAME ==========
+        // ===== START GAME =====
         gameLoop();
     </script>
 </body>
