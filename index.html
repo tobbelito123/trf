@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bollkamp Ultimate Final</title>
+    <title>Bollkamp Fixed Physics</title>
     <style>
         body, html {
             margin: 0;
@@ -75,10 +75,10 @@
     </div>
 
     <script>
-        // ===== GAME CONFIG =====
-        const FRICTION = 0.985;
-        const MIN_SPEED = 2.0;
-        const FORCE_MULTIPLIER = 18;
+        // ===== PHYSICS CONSTANTS =====
+        const FRICTION = 0.98;
+        const MIN_SPEED = 3.0;
+        const FORCE_MULTIPLIER = 25;
         const COLLISION_COOLDOWN = 300;
 
         // ===== GAME STATE =====
@@ -86,7 +86,7 @@
         let isSoundEnabled = false;
         let redX, redY, greenX, greenY;
         let score = 0, lastCollisionTime = 0;
-        let greenSpeedX = 3, greenSpeedY = 2.5;
+        let greenSpeedX = 4, greenSpeedY = 3;
         let previousRedX, previousRedY;
 
         // ===== ELEMENTS =====
@@ -96,7 +96,7 @@
         const scoreElement = document.getElementById('score');
         const highscoreElement = document.getElementById('highscore');
 
-        // ===== AUDIO SYSTEM =====
+        // ===== SOUND SYSTEM =====
         function playSound(freq, duration=0.2) {
             if(!isSoundEnabled || !audioContext) return;
             
@@ -170,14 +170,16 @@
         // ===== PHYSICS ENGINE =====
         function updatePhysics() {
             // Apply friction while maintaining minimum speed
-            greenSpeedX = Math.sign(greenSpeedX) * Math.max(
-                MIN_SPEED, 
-                Math.abs(greenSpeedX * FRICTION)
-            );
-            greenSpeedY = Math.sign(greenSpeedY) * Math.max(
-                MIN_SPEED, 
-                Math.abs(greenSpeedY * FRICTION)
-            );
+            greenSpeedX *= FRICTION;
+            greenSpeedY *= FRICTION;
+
+            // Enforce minimum speed
+            if(Math.abs(greenSpeedX) < MIN_SPEED) {
+                greenSpeedX = MIN_SPEED * (greenSpeedX < 0 ? -1 : 1);
+            }
+            if(Math.abs(greenSpeedY) < MIN_SPEED) {
+                greenSpeedY = MIN_SPEED * (greenSpeedY < 0 ? -1 : 1);
+            }
 
             // Update position
             greenX += greenSpeedX;
@@ -226,12 +228,12 @@
 
         function handleCollision() {
             const now = Date.now();
-            const dx = redX - greenX;
-            const dy = redY - greenY;
+            const dx = greenX - redX;
+            const dy = greenY - redY;
             const distance = Math.sqrt(dx*dx + dy*dy);
 
             if(distance < 40 && now - lastCollisionTime > COLLISION_COOLDOWN) {
-                // Calculate impact force
+                // Calculate impact force direction (FROM red TO green)
                 const redVelocity = {
                     x: redX - previousRedX,
                     y: redY - previousRedY
@@ -239,12 +241,12 @@
                 const angle = Math.atan2(dy, dx);
                 const force = Math.min(
                     Math.sqrt(redVelocity.x**2 + redVelocity.y**2) * FORCE_MULTIPLIER,
-                    25
+                    30
                 );
 
-                // Apply physics
-                greenSpeedX = Math.cos(angle) * -force;
-                greenSpeedY = Math.sin(angle) * -force;
+                // Apply physics (push green ball AWAY from collision)
+                greenSpeedX = Math.cos(angle) * force;
+                greenSpeedY = Math.sin(angle) * force;
 
                 // Update score
                 score++;
@@ -297,3 +299,4 @@
     </script>
 </body>
 </html>
+
