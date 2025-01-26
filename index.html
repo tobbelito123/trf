@@ -1,300 +1,234 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bollkamp Fixed Physics</title>
+    <title>Neon Pulse</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background-color: #333;
-            font-family: Arial, sans-serif;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
         }
 
-        #gameArea {
+        #gameContainer {
             position: relative;
-            width: 90%;
-            height: 90%;
-            margin: 2% auto;
-            background-color: #fff;
-            border: 3px solid #444;
-            transition: transform 0.1s;
+            width: 100%;
+            height: 100%;
         }
 
-        .ball {
+        #player {
             position: absolute;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
+            background: #ff0055;
             border-radius: 50%;
-            transition: transform 0.1s;
-        }
-
-        #redBall {
-            background-color: #ff0000;
+            box-shadow: 0 0 20px #ff0055;
             z-index: 2;
         }
 
-        #greenBall {
-            background-color: #00ff00;
-            z-index: 1;
+        .collectible {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00ff88;
         }
 
-        #scoreContainer {
+        .obstacle {
             position: absolute;
+            background: #ff2200;
+            box-shadow: 0 0 15px #ff2200;
+            border-radius: 5px;
+        }
+
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        #highscore {
+            position: fixed;
             top: 10px;
             right: 10px;
-            color: black;
+            color: #fff;
             font-size: 24px;
-            font-weight: bold;
-            z-index: 3;
-            text-shadow: 1px 1px 2px white;
-        }
-
-        .particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: #00ff00;
-            border-radius: 50%;
-            pointer-events: none;
-            opacity: 0.8;
+            text-shadow: 0 0 10px #ff00ff;
         }
     </style>
 </head>
 <body>
-    <div id="gameArea">
-        <div id="scoreContainer">
-            <div>Poäng: <span id="score">0</span></div>
-            <div>Rekord: <span id="highscore">0</span></div>
-        </div>
-        <div id="redBall" class="ball"></div>
-        <div id="greenBall" class="ball"></div>
+    <div id="gameContainer">
+        <div id="hud">Score: <span id="score">0</span></div>
+        <div id="highscore">High: <span id="highscoreValue">0</span></div>
+        <div id="player"></div>
     </div>
 
     <script>
-        // ===== PHYSICS CONSTANTS =====
-        const FRICTION = 0.98;
-        const MIN_SPEED = 3.0;
-        const FORCE_MULTIPLIER = 25;
-        const COLLISION_COOLDOWN = 300;
-
-        // ===== GAME STATE =====
-        let audioContext;
-        let isSoundEnabled = false;
-        let redX, redY, greenX, greenY;
-        let score = 0, lastCollisionTime = 0;
-        let greenSpeedX = 4, greenSpeedY = 3;
-        let previousRedX, previousRedY;
-
-        // ===== ELEMENTS =====
-        const redBall = document.getElementById('redBall');
-        const greenBall = document.getElementById('greenBall');
-        const gameArea = document.getElementById('gameArea');
+        const player = document.getElementById('player');
         const scoreElement = document.getElementById('score');
-        const highscoreElement = document.getElementById('highscore');
+        const highscoreElement = document.getElementById('highscoreValue');
+        let score = 0;
+        let highscore = localStorage.getItem('neonPulseHighscore') || 0;
+        let obstacles = [];
+        let collectibles = [];
+        let isGameActive = true;
+        let playerX = 50;
+        let playerY = 50;
 
-        // ===== SOUND SYSTEM =====
-        function playSound(freq, duration=0.2) {
-            if(!isSoundEnabled || !audioContext) return;
-            
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.frequency.value = freq;
-            osc.type = 'square';
-            
-            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
-            
-            osc.start();
-            osc.stop(audioContext.currentTime + duration);
-        }
+        // Initialize game
+        highscoreElement.textContent = highscore;
+        player.style.left = '50%';
+        player.style.top = '50%';
 
-        // ===== INITIALIZATION =====
-        function initGame() {
-            const rect = gameArea.getBoundingClientRect();
-            redX = rect.width/2 - 20;
-            redY = rect.height/2 - 20;
-            greenX = 100;
-            greenY = 100;
-            
-            redBall.style.left = redX + 'px';
-            redBall.style.top = redY + 'px';
-            greenBall.style.left = greenX + 'px';
-            greenBall.style.top = greenY + 'px';
-            
-            highscoreElement.textContent = localStorage.getItem('highscore') || 0;
-        }
-        initGame();
+        // Touch handling
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-        // ===== TOUCH CONTROLS =====
-        let touchStartX = 0, touchStartY = 0;
-
-        function handleTouchStart(e) {
-            if(!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if(!isSoundEnabled) audioContext.resume().then(() => isSoundEnabled = true);
-            
+        document.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
-            previousRedX = redX;
-            previousRedY = redY;
-        }
+        });
 
-        function handleTouchMove(e) {
+        document.addEventListener('touchmove', (e) => {
+            if(!isGameActive) return;
             e.preventDefault();
+            
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
+            
+            playerX += touchX - touchStartX;
+            playerY += touchY - touchStartY;
 
-            redX = Math.max(0, Math.min(
-                gameArea.offsetWidth - 40, 
-                redX + (touchX - touchStartX)
-            ));
-            redY = Math.max(0, Math.min(
-                gameArea.offsetHeight - 40, 
-                redY + (touchY - touchStartY)
-            ));
+            // Keep player in bounds
+            playerX = Math.max(15, Math.min(window.innerWidth - 15, playerX));
+            playerY = Math.max(15, Math.min(window.innerHeight - 15, playerY));
 
-            redBall.style.left = redX + 'px';
-            redBall.style.top = redY + 'px';
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
 
             touchStartX = touchX;
             touchStartY = touchY;
+        });
+
+        // Game elements generation
+        function createCollectible() {
+            const collectible = document.createElement('div');
+            collectible.className = 'collectible';
+            collectible.style.left = `${Math.random() * 90 + 5}%`;
+            collectible.style.top = `${Math.random() * 90 + 5}%`;
+            gameContainer.appendChild(collectible);
+            collectibles.push(collectible);
         }
 
-        // ===== PHYSICS ENGINE =====
-        function updatePhysics() {
-            // Apply friction while maintaining minimum speed
-            greenSpeedX *= FRICTION;
-            greenSpeedY *= FRICTION;
-
-            // Enforce minimum speed
-            if(Math.abs(greenSpeedX) < MIN_SPEED) {
-                greenSpeedX = MIN_SPEED * (greenSpeedX < 0 ? -1 : 1);
-            }
-            if(Math.abs(greenSpeedY) < MIN_SPEED) {
-                greenSpeedY = MIN_SPEED * (greenSpeedY < 0 ? -1 : 1);
-            }
-
-            // Update position
-            greenX += greenSpeedX;
-            greenY += greenSpeedY;
-
-            // Wall collisions
-            const boundaryRight = gameArea.offsetWidth - 40;
-            const boundaryBottom = gameArea.offsetHeight - 40;
-            
-            if(greenX < 0 || greenX > boundaryRight) {
-                greenSpeedX *= -1;
-                greenX = Math.max(0, Math.min(boundaryRight, greenX));
-                playSound(320);
-            }
-            if(greenY < 0 || greenY > boundaryBottom) {
-                greenSpeedY *= -1;
-                greenY = Math.max(0, Math.min(boundaryBottom, greenY));
-                playSound(320);
-            }
+        function createObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.className = 'obstacle';
+            obstacle.style.width = `${Math.random() * 50 + 30}px`;
+            obstacle.style.height = `${Math.random() * 50 + 30}px`;
+            obstacle.style.left = `${Math.random() * 90 + 5}%`;
+            obstacle.style.top = `${Math.random() * 90 + 5}%`;
+            gameContainer.appendChild(obstacle);
+            obstacles.push(obstacle);
         }
 
-        // ===== COLLISION SYSTEM =====
-        function createParticles(x, y) {
-            for(let i = 0; i < 10; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = x + 20 + 'px';
-                particle.style.top = y + 20 + 'px';
-                
-                const angle = (Math.PI * 2 * i)/10;
-                const speed = 12;
-                
-                gameArea.appendChild(particle);
-                
-                requestAnimationFrame(() => {
-                    particle.style.transform = `translate(
-                        ${Math.cos(angle) * speed}px, 
-                        ${Math.sin(angle) * speed}px
-                    )`;
-                    particle.style.opacity = '0';
-                    
-                    setTimeout(() => particle.remove(), 400);
-                });
-            }
-        }
+        // Collision detection
+        function checkCollisions() {
+            const playerRect = player.getBoundingClientRect();
 
-        function handleCollision() {
-            const now = Date.now();
-            const dx = greenX - redX;
-            const dy = greenY - redY;
-            const distance = Math.sqrt(dx*dx + dy*dy);
-
-            if(distance < 40 && now - lastCollisionTime > COLLISION_COOLDOWN) {
-                // Calculate impact force direction (FROM red TO green)
-                const redVelocity = {
-                    x: redX - previousRedX,
-                    y: redY - previousRedY
-                };
-                const angle = Math.atan2(dy, dx);
-                const force = Math.min(
-                    Math.sqrt(redVelocity.x**2 + redVelocity.y**2) * FORCE_MULTIPLIER,
-                    30
-                );
-
-                // Apply physics (push green ball AWAY from collision)
-                greenSpeedX = Math.cos(angle) * force;
-                greenSpeedY = Math.sin(angle) * force;
-
-                // Update score
-                score++;
-                scoreElement.textContent = score;
-                lastCollisionTime = now;
-
-                // Highscore handling
-                if(score > highscoreElement.textContent) {
-                    highscoreElement.textContent = score;
-                    localStorage.setItem('highscore', score);
-                    playSound(900, 0.4);
-                } else {
-                    playSound(600, 0.2);
+            // Check collectibles
+            collectibles.forEach((collectible, index) => {
+                const cRect = collectible.getBoundingClientRect();
+                if (Math.hypot(
+                    playerRect.left - cRect.left,
+                    playerRect.top - cRect.top
+                ) < 30) {
+                    collectible.remove();
+                    collectibles.splice(index, 1);
+                    score += 100;
+                    scoreElement.textContent = score;
+                    createCollectible();
                 }
+            });
 
-                // Visual effects
-                createParticles(greenX, greenY);
-                greenBall.style.transform = 'scale(1.4)';
-                gameArea.style.transform = `translate(
-                    ${(Math.random()-0.5)*6}px,
-                    ${(Math.random()-0.5)*6}px
-                )`;
-                setTimeout(() => {
-                    greenBall.style.transform = 'scale(1)';
-                    gameArea.style.transform = 'none';
-                }, 100);
-            }
+            // Check obstacles
+            obstacles.forEach(obstacle => {
+                const oRect = obstacle.getBoundingClientRect();
+                if (Math.abs(playerRect.left - oRect.left) < 30 &&
+                    Math.abs(playerRect.top - oRect.top) < 30) {
+                    gameOver();
+                }
+            });
         }
 
-        // ===== GAME LOOP =====
+        function gameOver() {
+            isGameActive = false;
+            if(score > highscore) {
+                highscore = score;
+                localStorage.setItem('neonPulseHighscore', highscore);
+                highscoreElement.textContent = highscore;
+            }
+            
+            // Flash effect
+            document.body.style.backgroundColor = '#ff0000';
+            setTimeout(() => {
+                document.body.style.backgroundColor = '#000';
+                resetGame();
+            }, 500);
+        }
+
+        function resetGame() {
+            // Clear elements
+            obstacles.forEach(o => o.remove());
+            collectibles.forEach(c => c.remove());
+            obstacles = [];
+            collectibles = [];
+            
+            // Reset player
+            playerX = window.innerWidth / 2;
+            playerY = window.innerHeight / 2;
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
+            
+            // Reset score
+            score = 0;
+            scoreElement.textContent = score;
+            
+            // Create new elements
+            for(let i = 0; i < 5; i++) createCollectible();
+            for(let i = 0; i < 3; i++) createObstacle();
+            
+            isGameActive = true;
+        }
+
+        // Game loop
         function gameLoop() {
-            previousRedX = redX;
-            previousRedY = redY;
-            
-            updatePhysics();
-            handleCollision();
-            
-            greenBall.style.left = greenX + 'px';
-            greenBall.style.top = greenY + 'px';
-            
+            if(isGameActive) {
+                checkCollisions();
+                
+                // Random obstacle movement
+                obstacles.forEach(obstacle => {
+                    obstacle.style.left = `${parseFloat(obstacle.style.left) + (Math.random() - 0.5)}%`;
+                    obstacle.style.top = `${parseFloat(obstacle.style.top) + (Math.random() - 0.5)}%`;
+                });
+
+                // Gradually increase difficulty
+                if(Math.random() < 0.02) createObstacle();
+            }
             requestAnimationFrame(gameLoop);
         }
 
-        // ===== EVENT LISTENERS =====
-        gameArea.addEventListener('touchstart', handleTouchStart);
-        gameArea.addEventListener('touchmove', handleTouchMove);
-
-        // ===== START GAME =====
+        // Start game
+        resetGame();
         gameLoop();
     </script>
 </body>
