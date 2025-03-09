@@ -1,24 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Firebase Test</title>
+  <meta charset="UTF-8">
+  <title>Firestore Rules Test</title>
 </head>
 <body>
-  <h1>Firebase Connection Test</h1>
+  <h1>Firestore Rules Test</h1>
+  <p>Open your DevTools console (F12) to see logs.</p>
 
-  <!-- We use type="module" so ES imports work in the browser -->
+  <!-- Use ES modules so we can import from the Firebase CDN -->
   <script type="module">
-    // 1) Import the Firebase functions
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      setDoc 
-    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-    // 2) Your real Firebase config
+    // REPLACE with your actual config:
     const firebaseConfig = {
       apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
       authDomain: "neonpulse-7e6aa.firebaseapp.com",
@@ -28,31 +23,36 @@
       appId: "1:77649154549:web:0d538d42159749162810bc"
     };
 
-    // 3) Initialize Firebase & Firestore
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 4) Quick test: write/read a doc
-    async function testFirestore() {
-      try {
-        const testRef = doc(db, "testCollection", "testDoc");
-        // Write some data
-        await setDoc(testRef, { timestamp: Date.now() });
-        console.log("Wrote test doc to Firestore!");
+    async function testScore() {
+      const docRef = doc(db, "highscore", "global");
 
-        // Read it back
-        const docSnap = await getDoc(testRef);
-        if (docSnap.exists()) {
-          console.log("Read back from Firestore:", docSnap.data());
+      try {
+        // 1) Read current doc
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          // 2) If no doc, create it with score = 100
+          await setDoc(docRef, { score: 100 });
+          console.log("Created /highscore/global with score=100");
         } else {
-          console.log("No doc found!");
+          // 3) If doc exists, increment the score by 10
+          const current = docSnap.data().score;
+          console.log("Doc exists. Current score:", current);
+          
+          const newScore = current + 10;
+          await setDoc(docRef, { score: newScore });
+          console.log("Updated score to:", newScore);
         }
       } catch (err) {
-        console.error("Error in testFirestore:", err);
+        console.error("Error in testScore:", err);
       }
     }
 
-    testFirestore();
+    // Run the test
+    testScore();
   </script>
 </body>
 </html>
