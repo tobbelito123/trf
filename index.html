@@ -1,302 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Neon Pulse</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            font-family: 'Arial', sans-serif;
-            touch-action: none;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        #player {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ff0055;
-            border-radius: 50%;
-            box-shadow: 0 0 20px #ff0055;
-            z-index: 2;
-        }
-
-        .collectible {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: #00ff88;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #00ff88;
-        }
-
-        .obstacle {
-            position: absolute;
-            background: #ff2200;
-            box-shadow: 0 0 15px #ff2200;
-            border-radius: 5px;
-        }
-
-        #hud {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            color: #fff;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00ffff;
-        }
-
-        #highscore {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            color: #fff;
-            font-size: 24px;
-            text-shadow: 0 0 10px #ff00ff;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Firebase Test</title>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="hud">Score: <span id="score">0</span></div>
-        <div id="highscore">High1: <span id="highscoreValue">0</span></div>
-        <div id="player"></div>
-    </div>
+  <h1>Firebase Connection Test</h1>
 
-    <!-- We use type="module" so we can import Firebase v9+ directly -->
-    <script type="module">
-        // 1) Import necessary Firebase functions
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { 
-            getFirestore, 
-            doc, 
-            getDoc, 
-            setDoc 
-        } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+  <!-- We use type="module" so ES imports work in the browser -->
+  <script type="module">
+    // 1) Import the Firebase functions
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      setDoc 
+    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-        // 2) Your Firebase config (REPLACE WITH YOUR ACTUAL KEYS!)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
-            authDomain: "neonpulse-7e6aa.firebaseapp.com",
-            projectId: "neonpulse-7e6aa",
-            storageBucket: "neonpulse-7e6aa.firebasestorage.app",
-            messagingSenderId: "77649154549",
-            appId: "1:77649154549:web:0d538d42159749162810bc"
-        };
+    // 2) Your real Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
+      authDomain: "neonpulse-7e6aa.firebaseapp.com",
+      projectId: "neonpulse-7e6aa",
+      storageBucket: "neonpulse-7e6aa.firebasestorage.app",
+      messagingSenderId: "77649154549",
+      appId: "1:77649154549:web:0d538d42159749162810bc"
+    };
 
-        // 3) Initialize Firebase & Firestore
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    // 3) Initialize Firebase & Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // We'll keep a globalHighscore variable loaded from Firestore
-        let globalHighscore = 0;
+    // 4) Quick test: write/read a doc
+    async function testFirestore() {
+      try {
+        const testRef = doc(db, "testCollection", "testDoc");
+        // Write some data
+        await setDoc(testRef, { timestamp: Date.now() });
+        console.log("Wrote test doc to Firestore!");
 
-        // Called at the start to load the existing best from Firestore
-        async function loadGlobalHighscore() {
-            const docRef = doc(db, "highscore", "global");
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                globalHighscore = docSnap.data().score;
-                highscoreElement.textContent = globalHighscore;
-                console.log("Loaded global highscore:", globalHighscore);
-            } else {
-                // If no doc found, default to 0
-                globalHighscore = 0;
-                highscoreElement.textContent = "0";
-                console.log("No existing global highscore, default 0");
-            }
+        // Read it back
+        const docSnap = await getDoc(testRef);
+        if (docSnap.exists()) {
+          console.log("Read back from Firestore:", docSnap.data());
+        } else {
+          console.log("No doc found!");
         }
+      } catch (err) {
+        console.error("Error in testFirestore:", err);
+      }
+    }
 
-        // When the local player's score exceeds the known global, update Firestore
-        async function updateGlobalHighscoreIfHigher(newScore) {
-            if (newScore <= globalHighscore) return; // No need to update
-            const docRef = doc(db, "highscore", "global");
-            try {
-                await setDoc(docRef, { score: newScore });
-                globalHighscore = newScore;
-                console.log("Global highscore updated:", newScore);
-            } catch (err) {
-                console.error("Error updating global highscore:", err);
-            }
-        }
-
-        // ---------------------------------------------------------------------
-        // Original Neon Pulse game logic (movement, collisions, obstacles, etc.)
-        // ---------------------------------------------------------------------
-        const gameContainer = document.getElementById('gameContainer');
-        const player = document.getElementById('player');
-        const scoreElement = document.getElementById('score');
-        const highscoreElement = document.getElementById('highscoreValue');
-
-        let score = 0;
-        let obstacles = [];
-        let collectibles = [];
-        let isGameActive = true;
-        let playerX = 50;
-        let playerY = 50;
-
-        // Initialize player position
-        player.style.left = '50%';
-        player.style.top = '50%';
-
-        // Touch handling
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
-
-        document.addEventListener('touchmove', (e) => {
-            if(!isGameActive) return;
-            e.preventDefault();
-            
-            const touchX = e.touches[0].clientX;
-            const touchY = e.touches[0].clientY;
-            
-            playerX += touchX - touchStartX;
-            playerY += touchY - touchStartY;
-
-            // Keep player in bounds
-            playerX = Math.max(15, Math.min(window.innerWidth - 15, playerX));
-            playerY = Math.max(15, Math.min(window.innerHeight - 15, playerY));
-
-            player.style.left = `${playerX}px`;
-            player.style.top = `${playerY}px`;
-
-            touchStartX = touchX;
-            touchStartY = touchY;
-        });
-
-        // Generate collectible
-        function createCollectible() {
-            const collectible = document.createElement('div');
-            collectible.className = 'collectible';
-            collectible.style.left = `${Math.random() * 90 + 5}%`;
-            collectible.style.top = `${Math.random() * 90 + 5}%`;
-            gameContainer.appendChild(collectible);
-            collectibles.push(collectible);
-        }
-
-        // Generate obstacle
-        function createObstacle() {
-            const obstacle = document.createElement('div');
-            obstacle.className = 'obstacle';
-            obstacle.style.width = `${Math.random() * 50 + 30}px`;
-            obstacle.style.height = `${Math.random() * 50 + 30}px`;
-            obstacle.style.left = `${Math.random() * 90 + 5}%`;
-            obstacle.style.top = `${Math.random() * 90 + 5}%`;
-            gameContainer.appendChild(obstacle);
-            obstacles.push(obstacle);
-        }
-
-        // Collision detection
-        function checkCollisions() {
-            const playerRect = player.getBoundingClientRect();
-
-            // Check collectibles
-            collectibles.forEach((collectible, index) => {
-                const cRect = collectible.getBoundingClientRect();
-                if (Math.hypot(
-                    playerRect.left - cRect.left,
-                    playerRect.top - cRect.top
-                ) < 30) {
-                    collectible.remove();
-                    collectibles.splice(index, 1);
-                    score += 100;
-                    scoreElement.textContent = score;
-                    createCollectible();
-                }
-            });
-
-            // Check obstacles
-            obstacles.forEach(obstacle => {
-                const oRect = obstacle.getBoundingClientRect();
-                if (Math.abs(playerRect.left - oRect.left) < 30 &&
-                    Math.abs(playerRect.top - oRect.top) < 30) {
-                    gameOver();
-                }
-            });
-        }
-
-        // Game over logic
-        function gameOver() {
-            isGameActive = false;
-            
-            // Compare local score with known global
-            updateGlobalHighscoreIfHigher(score);
-            
-            // Flash effect
-            document.body.style.backgroundColor = '#ff0000';
-            setTimeout(() => {
-                document.body.style.backgroundColor = '#000';
-                resetGame();
-            }, 500);
-        }
-
-        // Reset game logic
-        function resetGame() {
-            // Clear old elements
-            obstacles.forEach(o => o.remove());
-            collectibles.forEach(c => c.remove());
-            obstacles = [];
-            collectibles = [];
-
-            // Reset player
-            playerX = window.innerWidth / 2;
-            playerY = window.innerHeight / 2;
-            player.style.left = `${playerX}px`;
-            player.style.top = `${playerY}px`;
-
-            // Reset local score
-            score = 0;
-            scoreElement.textContent = score;
-
-            // Create new elements
-            for(let i = 0; i < 5; i++) createCollectible();
-            for(let i = 0; i < 3; i++) createObstacle();
-
-            isGameActive = true;
-        }
-
-        // Main game loop
-        function gameLoop() {
-            if (isGameActive) {
-                checkCollisions();
-
-                // Slight random movement for obstacles
-                obstacles.forEach(obstacle => {
-                    obstacle.style.left = `${parseFloat(obstacle.style.left) + (Math.random() - 0.5)}%`;
-                    obstacle.style.top = `${parseFloat(obstacle.style.top) + (Math.random() - 0.5)}%`;
-                });
-
-                // Gradually spawn more obstacles
-                if (Math.random() < 0.02) {
-                    createObstacle();
-                }
-            }
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Startup: load the global highscore, then reset & start
-        async function startGame() {
-            await loadGlobalHighscore();
-            resetGame();
-            gameLoop();
-        }
-
-        // Let's kick it off
-        startGame();
-    </script>
+    testFirestore();
+  </script>
 </body>
 </html>
