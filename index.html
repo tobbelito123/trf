@@ -117,6 +117,7 @@
         console.log("No global doc found. default=0");
         globalHighscore = 0;
       }
+      highscoreElement.textContent = globalHighscore;
     }
 
     // If the player's final score is higher than the known global, update Firestore
@@ -152,7 +153,7 @@
     let playerY = 50;
 
     // Initialize local highscore text
-    highscoreElement.textContent = highscore;
+    //highscoreElement.textContent = highscore;
     player.style.left = '50%';
     player.style.top = '50%';
 
