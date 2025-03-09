@@ -1,236 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Pulse</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            font-family: 'Arial', sans-serif;
-            touch-action: none;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        #player {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ff0055;
-            border-radius: 50%;
-            box-shadow: 0 0 20px #ff0055;
-            z-index: 2;
-        }
-
-        .collectible {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: #00ff88;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #00ff88;
-        }
-
-        .obstacle {
-            position: absolute;
-            background: #ff2200;
-            box-shadow: 0 0 15px #ff2200;
-            border-radius: 5px;
-        }
-
-        #hud {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            color: #fff;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00ffff;
-        }
-
-        #highscore {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            color: #fff;
-            font-size: 24px;
-            text-shadow: 0 0 10px #ff00ff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Neon Pulse</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Arial', sans-serif;
+      touch-action: none;
+    }
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    #player {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: #ff0055;
+      border-radius: 50%;
+      box-shadow: 0 0 20px #ff0055;
+      z-index: 2;
+    }
+    .collectible {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      background: #00ff88;
+      border-radius: 50%;
+      box-shadow: 0 0 15px #00ff88;
+    }
+    .obstacle {
+      position: absolute;
+      background: #ff2200;
+      box-shadow: 0 0 15px #ff2200;
+      border-radius: 5px;
+    }
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font-size: 24px;
+      text-shadow: 0 0 10px #00ffff;
+    }
+    #highscore {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      color: #fff;
+      font-size: 24px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+  </style>
 </head>
+
 <body>
-    <div id="gameContainer">
-        <div id="hud">Score: <span id="score">0</span></div>
-        <div id="highscore">High: <span id="highscoreValue">0</span></div>
-        <div id="player"></div>
-    </div>
+  <div id="gameContainer">
+      <div id="hud">Score: <span id="score">0</span></div>
+      <div id="highscore">High: <span id="highscoreValue">0</span></div>
+      <div id="player"></div>
+  </div>
 
-    <script>
-        const player = document.getElementById('player');
-        const scoreElement = document.getElementById('score');
-        const highscoreElement = document.getElementById('highscoreValue');
-        let score = 0;
-        let highscore = localStorage.getItem('neonPulseHighscore') || 0;
-        let obstacles = [];
-        let collectibles = [];
-        let isGameActive = true;
-        let playerX = 50;
-        let playerY = 50;
+  <!-- 
+    We use type="module" so we can 'import' directly in the browser.
+    Make sure you use the same version for all Firebase imports (here: 11.4.0).
+  -->
+  <script type="module">
+    // 1) Import the Firebase functions you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      setDoc 
+    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-        // Initialize game
-        highscoreElement.textContent = highscore;
-        player.style.left = '50%';
-        player.style.top = '50%';
+    // 2) Your Firebase config (replace with your actual keys)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
+      authDomain: "neonpulse-7e6aa.firebaseapp.com",
+      projectId: "neonpulse-7e6aa",
+      storageBucket: "neonpulse-7e6aa.firebasestorage.app",
+      messagingSenderId: "77649154549",
+      appId: "1:77649154549:web:0d538d42159749162810bc"
+    };
 
-        // Touch handling
-        let touchStartX = 0;
-        let touchStartY = 0;
+    // 3) Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    // 4) Initialize Firestore
+    const db = getFirestore(app);
 
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
+    // We'll store the current global highscore in this variable
+    let globalHighscore = 0;
 
-        document.addEventListener('touchmove', (e) => {
-            if(!isGameActive) return;
-            e.preventDefault();
-            
-            const touchX = e.touches[0].clientX;
-            const touchY = e.touches[0].clientY;
-            
-            playerX += touchX - touchStartX;
-            playerY += touchY - touchStartY;
+    // -------------------------------------------------------------------
+    // FIREBASE-FRIENDLY: Helper functions to load & update the global score
+    // -------------------------------------------------------------------
+    async function loadGlobalHighscore() {
+      // doc(db, "collectionName", "documentID")
+      const docRef = doc(db, "highscore", "global");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        globalHighscore = docSnap.data().score;
+        console.log("Loaded global highscore:", globalHighscore);
+        highscoreElement.textContent = globalHighscore;
+      } else {
+        console.log("No global highscore doc found, default 0");
+        globalHighscore = 0;
+        highscoreElement.textContent = 0;
+      }
+    }
 
-            // Keep player in bounds
-            playerX = Math.max(15, Math.min(window.innerWidth - 15, playerX));
-            playerY = Math.max(15, Math.min(window.innerHeight - 15, playerY));
+    async function updateGlobalHighscoreIfHigher(newScore) {
+      if (newScore <= globalHighscore) return; // Not higher, do nothing
 
-            player.style.left = `${playerX}px`;
-            player.style.top = `${playerY}px`;
+      const docRef = doc(db, "highscore", "global");
+      try {
+        await setDoc(docRef, { score: newScore });
+        console.log("Global highscore updated to", newScore);
+        globalHighscore = newScore;
+      } catch (err) {
+        console.error("Error updating global highscore:", err);
+      }
+    }
 
-            touchStartX = touchX;
-            touchStartY = touchY;
-        });
+    // -------------------------------------------------------------------
+    // The rest of your original game code
+    // -------------------------------------------------------------------
+    const player = document.getElementById('player');
+    const scoreElement = document.getElementById('score');
+    const highscoreElement = document.getElementById('highscoreValue');
+    let score = 0;
 
-        // Game elements generation
-        function createCollectible() {
-            const collectible = document.createElement('div');
-            collectible.className = 'collectible';
-            collectible.style.left = `${Math.random() * 90 + 5}%`;
-            collectible.style.top = `${Math.random() * 90 + 5}%`;
-            gameContainer.appendChild(collectible);
-            collectibles.push(collectible);
+    let obstacles = [];
+    let collectibles = [];
+    let isGameActive = true;
+    let playerX = 50;
+    let playerY = 50;
+
+    player.style.left = '50%';
+    player.style.top = '50%';
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchmove', (e) => {
+      if(!isGameActive) return;
+      e.preventDefault();
+
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+
+      playerX += touchX - touchStartX;
+      playerY += touchY - touchStartY;
+
+      // Keep player in bounds
+      playerX = Math.max(15, Math.min(window.innerWidth - 15, playerX));
+      playerY = Math.max(15, Math.min(window.innerHeight - 15, playerY));
+
+      player.style.left = `${playerX}px`;
+      player.style.top = `${playerY}px`;
+
+      touchStartX = touchX;
+      touchStartY = touchY;
+    });
+
+    const gameContainer = document.getElementById('gameContainer');
+
+    function createCollectible() {
+      const collectible = document.createElement('div');
+      collectible.className = 'collectible';
+      collectible.style.left = `${Math.random() * 90 + 5}%`;
+      collectible.style.top = `${Math.random() * 90 + 5}%`;
+      gameContainer.appendChild(collectible);
+      collectibles.push(collectible);
+    }
+
+    function createObstacle() {
+      const obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      obstacle.style.width = `${Math.random() * 50 + 30}px`;
+      obstacle.style.height = `${Math.random() * 50 + 30}px`;
+      obstacle.style.left = `${Math.random() * 90 + 5}%`;
+      obstacle.style.top = `${Math.random() * 90 + 5}%`;
+      gameContainer.appendChild(obstacle);
+      obstacles.push(obstacle);
+    }
+
+    function checkCollisions() {
+      const playerRect = player.getBoundingClientRect();
+
+      // Check collectibles
+      collectibles.forEach((collectible, index) => {
+        const cRect = collectible.getBoundingClientRect();
+        if (Math.hypot(
+            playerRect.left - cRect.left,
+            playerRect.top - cRect.top
+          ) < 30) {
+          collectible.remove();
+          collectibles.splice(index, 1);
+          score += 100;
+          scoreElement.textContent = score;
+          createCollectible();
         }
+      });
 
-        function createObstacle() {
-            const obstacle = document.createElement('div');
-            obstacle.className = 'obstacle';
-            obstacle.style.width = `${Math.random() * 50 + 30}px`;
-            obstacle.style.height = `${Math.random() * 50 + 30}px`;
-            obstacle.style.left = `${Math.random() * 90 + 5}%`;
-            obstacle.style.top = `${Math.random() * 90 + 5}%`;
-            gameContainer.appendChild(obstacle);
-            obstacles.push(obstacle);
+      // Check obstacles
+      obstacles.forEach(obstacle => {
+        const oRect = obstacle.getBoundingClientRect();
+        if (Math.abs(playerRect.left - oRect.left) < 30 &&
+            Math.abs(playerRect.top - oRect.top) < 30) {
+          gameOver();
         }
+      });
+    }
 
-        // Collision detection
-        function checkCollisions() {
-            const playerRect = player.getBoundingClientRect();
+    function gameOver() {
+      isGameActive = false;
 
-            // Check collectibles
-            collectibles.forEach((collectible, index) => {
-                const cRect = collectible.getBoundingClientRect();
-                if (Math.hypot(
-                    playerRect.left - cRect.left,
-                    playerRect.top - cRect.top
-                ) < 30) {
-                    collectible.remove();
-                    collectibles.splice(index, 1);
-                    score += 100;
-                    scoreElement.textContent = score;
-                    createCollectible();
-                }
-            });
+      // Update Firestore if local score is higher
+      updateGlobalHighscoreIfHigher(score);
 
-            // Check obstacles
-            obstacles.forEach(obstacle => {
-                const oRect = obstacle.getBoundingClientRect();
-                if (Math.abs(playerRect.left - oRect.left) < 30 &&
-                    Math.abs(playerRect.top - oRect.top) < 30) {
-                    gameOver();
-                }
-            });
-        }
-
-        function gameOver() {
-            isGameActive = false;
-            if(score > highscore) {
-                highscore = score;
-                localStorage.setItem('neonPulseHighscore', highscore);
-                highscoreElement.textContent = highscore;
-            }
-            
-            // Flash effect
-            document.body.style.backgroundColor = '#ff0000';
-            setTimeout(() => {
-                document.body.style.backgroundColor = '#000';
-                resetGame();
-            }, 500);
-        }
-
-        function resetGame() {
-            // Clear elements
-            obstacles.forEach(o => o.remove());
-            collectibles.forEach(c => c.remove());
-            obstacles = [];
-            collectibles = [];
-            
-            // Reset player
-            playerX = window.innerWidth / 2;
-            playerY = window.innerHeight / 2;
-            player.style.left = `${playerX}px`;
-            player.style.top = `${playerY}px`;
-            
-            // Reset score
-            score = 0;
-            scoreElement.textContent = score;
-            
-            // Create new elements
-            for(let i = 0; i < 5; i++) createCollectible();
-            for(let i = 0; i < 3; i++) createObstacle();
-            
-            isGameActive = true;
-        }
-
-        // Game loop
-        function gameLoop() {
-            if(isGameActive) {
-                checkCollisions();
-                
-                // Random obstacle movement
-                obstacles.forEach(obstacle => {
-                    obstacle.style.left = `${parseFloat(obstacle.style.left) + (Math.random() - 0.5)}%`;
-                    obstacle.style.top = `${parseFloat(obstacle.style.top) + (Math.random() - 0.5)}%`;
-                });
-
-                // Gradually increase difficulty
-                if(Math.random() < 0.02) createObstacle();
-            }
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Start game
+      // Flash effect
+      document.body.style.backgroundColor = '#ff0000';
+      setTimeout(() => {
+        document.body.style.backgroundColor = '#000';
         resetGame();
-        gameLoop();
-    </script>
+      }, 500);
+    }
+
+    function resetGame() {
+      // Clear elements
+      obstacles.forEach(o => o.remove());
+      collectibles.forEach(c => c.remove());
+      obstacles = [];
+      collectibles = [];
+
+      // Reset player
+      playerX = window.innerWidth / 2;
+      playerY = window.innerHeight / 2;
+      player.style.left = `${playerX}px`;
+      player.style.top = `${playerY}px`;
+
+      // Reset score
+      score = 0;
+      scoreElement.textContent = score;
+
+      // Create new elements
+      for(let i = 0; i < 5; i++) createCollectible();
+      for(let i = 0; i < 3; i++) createObstacle();
+
+      isGameActive = true;
+    }
+
+    function gameLoop() {
+      if(isGameActive) {
+        checkCollisions();
+
+        // Random obstacle movement
+        obstacles.forEach(obstacle => {
+          obstacle.style.left = `${parseFloat(obstacle.style.left) + (Math.random() - 0.5)}%`;
+          obstacle.style.top = `${parseFloat(obstacle.style.top) + (Math.random() - 0.5)}%`;
+        });
+
+        // Gradually increase difficulty
+        if(Math.random() < 0.02) createObstacle();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Load global highscore from Firestore, then start game
+    async function startGame() {
+      await loadGlobalHighscore();
+      resetGame();
+      gameLoop();
+    }
+
+    startGame();
+  </script>
 </body>
 </html>
-
