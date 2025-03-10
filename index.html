@@ -63,9 +63,35 @@
       font-size: 24px;
       text-shadow: 0 0 10px #ff00ff;
     }
+     /* Added container for username input and display */
+    #usernameContainer {
+      position: fixed;
+      top: 50px;
+      left: 10px;
+      color: #fff;
+      font-size: 20px;
+      z-index: 999;
+    }
+    #usernameContainer input {
+      font-size: 18px;
+    }
+
+    /* A label under the high score to show who set it */
+    #highscoreUser {
+      position: fixed;
+      top: 40px;
+      right: 10px;
+      color: #fff;
+      font-size: 20px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
   </style>
 </head>
 <body>
+  <div id="usernameContainer">
+    <label for="usernameInput">Your Name:</label><br>
+    <input type="text" id="usernameInput" maxlength="20" placeholder="Enter name (max 20 chars)" />
+  </div>
   <div id="gameContainer">
     <div id="hud">Score: <span id="score">0</span></div>
     <div id="highscore">High: <span id="highscoreValue">0</span></div>
@@ -105,6 +131,7 @@
 
     // We'll store a separate global highscore from Firestore
     let globalHighscore = 0;
+    let globalHighscoreUser = "N/A";
 
     // Load Firestore's global high score at startup
     async function loadGlobalHighscore() {
@@ -112,22 +139,38 @@
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         globalHighscore = docSnap.data().score;
-        console.log("Loaded global highscore:", globalHighscore);
+        globalHighscoreUser = docSnap.data().user || "N/A";
+       console.log("Loaded global highscore:", globalHighscore, "by", globalHighscoreUser);
       } else {
         console.log("No global doc found. default=0");
         globalHighscore = 0;
       }
       highscoreElement.textContent = globalHighscore;
+      highscoreUserElement.textContent = globalHighscoreUser;
     }
 
     // If the player's final score is higher than the known global, update Firestore
     async function updateGlobalHighscoreIfHigher(newScore) {
       if (newScore <= globalHighscore) return;
+      // Grab the user from the input field
+      let newUser = usernameInput.value.trim();
+      if (!newUser) {
+        newUser = "Anonymous";
+      }
+      // The doc in Firestore will store { score: number, user: string }
       const docRef = doc(db, "highscore", "global");
       try {
-        await setDoc(docRef, { score: newScore });
+        await setDoc(docRef, {
+          score: newScore,
+          user: newUser
+        });
         globalHighscore = newScore;
-        console.log("Global highscore updated to", newScore);
+        globalHighscoreUser = newUser;
+        console.log("Global highscore updated to", newScore, "by", newUser);
+
+        // Update the DOM
+        highscoreElement.textContent = globalHighscore;
+        highscoreUserElement.textContent = globalHighscoreUser;
       } catch (err) {
         console.error("Error updating global highscore:", err);
       }
