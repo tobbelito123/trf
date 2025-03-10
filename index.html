@@ -95,6 +95,9 @@
   <div id="gameContainer">
     <div id="hud">Score: <span id="score">0</span></div>
     <div id="highscore">High: <span id="highscoreValue">0</span></div>
+    <div id="highscoreUser">
+    User: <span id="highscoreUserValue">N/A</span>
+  </div>
     <div id="player"></div>
   </div>
 
@@ -184,6 +187,7 @@
     const gameContainer = document.getElementById('gameContainer');
     const player = document.getElementById('player');
     const scoreElement = document.getElementById('score');
+    const highscoreUserElement = document.getElementById('highscoreUserValue');
     const highscoreElement = document.getElementById('highscoreValue');
 
     // localStorage-based highscore
