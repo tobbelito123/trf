@@ -63,18 +63,6 @@
       font-size: 24px;
       text-shadow: 0 0 10px #ff00ff;
     }
-     /* Added container for username input and display */
-    #usernameContainer {
-      position: fixed;
-      top: 50px;
-      left: 10px;
-      color: #fff;
-      font-size: 20px;
-      z-index: 999;
-    }
-    #usernameContainer input {
-      font-size: 18px;
-    }
 
     /* A label under the high score to show who set it */
     #highscoreUser {
@@ -88,16 +76,12 @@
   </style>
 </head>
 <body>
-  <div id="usernameContainer">
-    <label for="usernameInput">Your Name:</label><br>
-    <input type="text" id="usernameInput" maxlength="20" placeholder="Enter name (max 20 chars)" />
-  </div>
   <div id="gameContainer">
     <div id="hud">Score: <span id="score">0</span></div>
     <div id="highscore">High: <span id="highscoreValue">0</span></div>
-    <div id="highscoreUser">
-    User: <span id="highscoreUserValue">N/A</span>
-  </div>
+    <!-- Shows the username for the global high score -->
+    <div id="highscoreUser">User: <span id="highscoreUserValue">N/A</span></div>
+
     <div id="player"></div>
   </div>
 
@@ -115,7 +99,7 @@
     } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
     /********************************************************
-     * 2) Your Firebase config (replace with your real keys)
+     * 2) Your Firebase config
      *******************************************************/
     const firebaseConfig = {
       apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
@@ -136,59 +120,12 @@
     let globalHighscore = 0;
     let globalHighscoreUser = "N/A";
 
-    // Load Firestore's global high score at startup
-    async function loadGlobalHighscore() {
-      const docRef = doc(db, "highscore", "global");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        globalHighscore = docSnap.data().score;
-        globalHighscoreUser = docSnap.data().user || "N/A";
-       console.log("Loaded global highscore:", globalHighscore, "by", globalHighscoreUser);
-      } else {
-        console.log("No global doc found. default=0");
-        globalHighscore = 0;
-      }
-      highscoreElement.textContent = globalHighscore;
-      highscoreUserElement.textContent = globalHighscoreUser;
-    }
-
-    // If the player's final score is higher than the known global, update Firestore
-    async function updateGlobalHighscoreIfHigher(newScore) {
-      if (newScore <= globalHighscore) return;
-      // Grab the user from the input field
-      let newUser = usernameInput.value.trim();
-      if (!newUser) {
-        newUser = "Anonymous";
-      }
-      // The doc in Firestore will store { score: number, user: string }
-      const docRef = doc(db, "highscore", "global");
-      try {
-        await setDoc(docRef, {
-          score: newScore,
-          user: newUser
-        });
-        globalHighscore = newScore;
-        globalHighscoreUser = newUser;
-        console.log("Global highscore updated to", newScore, "by", newUser);
-
-        // Update the DOM
-        highscoreElement.textContent = globalHighscore;
-        highscoreUserElement.textContent = globalHighscoreUser;
-      } catch (err) {
-        console.error("Error updating global highscore:", err);
-      }
-    }
-
-    /********************************************************
-     * 4) Original Neon Pulse logic (unchanged, except to add 
-     *    a call to update global high score in gameOver()).
-     *******************************************************/
-
+    // HTML references
     const gameContainer = document.getElementById('gameContainer');
     const player = document.getElementById('player');
     const scoreElement = document.getElementById('score');
-    const highscoreUserElement = document.getElementById('highscoreUserValue');
     const highscoreElement = document.getElementById('highscoreValue');
+    const highscoreUserElement = document.getElementById('highscoreUserValue');
 
     // localStorage-based highscore
     let score = 0;
@@ -200,11 +137,9 @@
     let playerY = 50;
 
     // Initialize local highscore text
-    //highscoreElement.textContent = highscore;
     player.style.left = '50%';
     player.style.top = '50%';
 
-    // Touch handling
     let touchStartX = 0;
     let touchStartY = 0;
 
@@ -234,6 +169,61 @@
       touchStartY = touchY;
     });
 
+    /********************************************************
+     * Firestore logic
+     *******************************************************/
+    // 1) Load Firestore's global high score at startup
+    async function loadGlobalHighscore() {
+      const docRef = doc(db, "highscore", "global");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        globalHighscore = data.score;
+        globalHighscoreUser = data.user || "N/A";
+        console.log("Loaded global highscore:", globalHighscore, "by", globalHighscoreUser);
+      } else {
+        console.log("No global doc found. default=0 / N/A");
+        globalHighscore = 0;
+        globalHighscoreUser = "N/A";
+      }
+      // Display it
+      highscoreElement.textContent = globalHighscore;
+      highscoreUserElement.textContent = globalHighscoreUser;
+    }
+
+    // 2) If the player's final score is higher than the global, prompt them for a username
+    async function updateGlobalHighscoreIfHigher(newScore) {
+      if (newScore <= globalHighscore) return; // Not beating global
+
+      // Prompt for a username if they set a new global high
+      let newUser = prompt("Congrats, you set a new global high score! Enter your name (max 20 chars):");
+      if (!newUser) {
+        newUser = "Anonymous";
+      }
+      // Force max 20 chars
+      newUser = newUser.slice(0, 20).trim();
+
+      try {
+        const docRef = doc(db, "highscore", "global");
+        await setDoc(docRef, {
+          score: newScore,
+          user: newUser
+        });
+        globalHighscore = newScore;
+        globalHighscoreUser = newUser;
+        console.log("Global highscore updated to", newScore, "by", newUser);
+
+        // Update the DOM
+        highscoreElement.textContent = globalHighscore;
+        highscoreUserElement.textContent = globalHighscoreUser;
+      } catch (err) {
+        console.error("Error updating global highscore:", err);
+      }
+    }
+
+    /********************************************************
+     * Original Neon Pulse logic
+     *******************************************************/
     function createCollectible() {
       const collectible = document.createElement('div');
       collectible.className = 'collectible';
@@ -285,15 +275,15 @@
     function gameOver() {
       isGameActive = false;
       // Update local highscore if needed
-      if(score > highscore) {
+      if (score > highscore) {
         highscore = score;
         localStorage.setItem('neonPulseHighscore', highscore);
         highscoreElement.textContent = highscore;
       }
 
-      // ALSO update global Firestore highscore if higher
+      // Also update global Firestore highscore if higher
       updateGlobalHighscoreIfHigher(score);
-      
+
       // Flash effect
       document.body.style.backgroundColor = '#ff0000';
       setTimeout(() => {
@@ -337,7 +327,9 @@
         });
 
         // Gradually increase difficulty
-        if(Math.random() < 0.02) createObstacle();
+        if(Math.random() < 0.02) {
+          createObstacle();
+        }
       }
       requestAnimationFrame(gameLoop);
     }
