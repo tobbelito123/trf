@@ -331,7 +331,11 @@
 <div class="sheet" id="infoSheet" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
   <h4 id="infoTitle">App Info</h4>
   <p>This app stores your submissions per belt locally in your browser’s cache (localStorage).  
-  Data stays on this device and works offline. It’s not synced anywhere.</p>
+Data stays on this device and works offline. It’s not synced anywhere.</p>
+<p>You can also install it as an app:  
+On Android, Chrome may suggest it automatically.  
+On iPhone, open Safari’s Share menu → “Add to Home Screen.”</p>
+
   <p>You can export to JSON for backup, and import that JSON file to restore. Reset wipes all counts.</p>
   <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
     <button class="reset" id="resetBtn">Reset all data</button>
@@ -408,18 +412,31 @@
       const o = DATA.submissions[sub];
       return BELTS.reduce((n,b) => n + (o[b]||0), 0);
     }
-    function refreshCards() {
-      for (const s of SUBMISSIONS) {
-        const el = document.getElementById("count-"+s);
-        if (el) el.textContent = totalFor(s);
-      }
-    }
+    function sortedSubmissions() {
+  return [...SUBMISSIONS].sort((a, b) => totalFor(b) - totalFor(a));
+}
+
+   function refreshCards() {
+  const grid = document.getElementById("view-log");
+  const foot = grid.querySelector(".foot");
+  const subs = sortedSubmissions();
+
+  subs.forEach((s) => {
+    const el = document.getElementById("count-" + s);
+    if (el) el.textContent = totalFor(s);
+
+    // Reorder card in DOM
+    const card = grid.querySelector(`[data-submission="${s}"]`);
+    if (card) grid.insertBefore(card, foot);
+  });
+}
+
 
     // Build stats list
     function buildStats() {
       const list = $("#statsList");
       list.innerHTML = "";
-      for (const s of SUBMISSIONS) {
+      for (const s of sortedSubmissions()) {
         const totals = DATA.submissions[s];
         const sum = totalFor(s);
         const frag = document.createElement("div");
