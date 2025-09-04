@@ -596,7 +596,7 @@ function renderCard(key) {
     openSheet(key);
     vibrate(8);
   });
-  document.getElementById("addBtn").addEventListener("click", addSubmissionFlow);
+  
 
 
   grid.insertBefore(card, beforeFoot);
@@ -649,6 +649,9 @@ SUBMISSIONS.forEach((key) => {
 });
 
     refreshCards();
+
+    document.getElementById("addBtn").addEventListener("click", addSubmissionFlow);
+
     
   </script>
   <script>
