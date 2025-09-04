@@ -239,9 +239,8 @@
     <header>
       <div class="title"><span class="dot"></span> BJJ Submissions Tracker</div>
       <div class="actions">
-        <button class="ghost" id="exportBtn" title="Export data as JSON">Export</button>
-        <button class="ghost" id="importBtn" title="Import data from JSON">Import</button>
         <button class="ghost" id="addBtn" title="Add a submission">+ Add</button>
+  <button class="ghost" id="infoBtn" title="Info">ℹ️ Info</button>
 
       </div>
     </header>
@@ -304,11 +303,7 @@
           </div>
           <div class="count" id="count-rear_naked_choke">0</div>
         </button>
-
-        <div class="foot">
-          <div>Tip: add to Home Screen for an app-like feel.</div>
-          <button class="reset" id="resetBtn" title="Reset all counts">Reset</button>
-        </div>
+<div class="foot"></div>
       </section>
 
       <!-- Stats view -->
@@ -331,6 +326,19 @@
     </div>
     <div class="hint">Tap a belt to log 1 rep for the selected submission.</div>
   </div>
+<!-- Info Sheet -->
+<div class="sheet-backdrop" id="infoBackdrop"></div>
+<div class="sheet" id="infoSheet" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
+  <h4 id="infoTitle">App Info</h4>
+  <p>This app stores your submissions per belt locally in your browser’s cache (localStorage).  
+  Data stays on this device and works offline. It’s not synced anywhere.</p>
+  <p>You can export to JSON for backup, and import that JSON file to restore. Reset wipes all counts.</p>
+  <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+    <button class="reset" id="resetBtn">Reset all data</button>
+    <button class="ghost" id="exportBtn">Export</button>
+    <button class="ghost" id="importBtn">Import</button>
+  </div>
+</div>
 
   <!-- Toast -->
   <div class="toast" id="toast">Saved</div>
@@ -651,6 +659,19 @@ SUBMISSIONS.forEach((key) => {
     refreshCards();
 
     document.getElementById("addBtn").addEventListener("click", addSubmissionFlow);
+
+    // ------- Info sheet -------
+const infoSheet = document.getElementById("infoSheet");
+const infoBackdrop = document.getElementById("infoBackdrop");
+document.getElementById("infoBtn").addEventListener("click", () => {
+  infoSheet.classList.add("open");
+  infoBackdrop.classList.add("open");
+});
+infoBackdrop.addEventListener("click", () => {
+  infoSheet.classList.remove("open");
+  infoBackdrop.classList.remove("open");
+});
+
 
     
   </script>
