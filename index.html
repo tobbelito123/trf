@@ -241,6 +241,8 @@
       <div class="actions">
         <button class="ghost" id="exportBtn" title="Export data as JSON">Export</button>
         <button class="ghost" id="importBtn" title="Import data from JSON">Import</button>
+        <button class="ghost" id="addBtn" title="Add a submission">+ Add</button>
+
       </div>
     </header>
 
@@ -552,8 +554,102 @@
       input.click();
     });
 
+    // Make a safe key from a label (e.g., "Rear Naked Choke" -> "rear_naked_choke")
+function slugify(label) {
+  return label
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_");
+}
+
+// Create a new submission card element and wire its click handler
+function renderCard(key) {
+  // skip if it already exists
+  if (document.getElementById("count-" + key)) return;
+
+  const grid = document.querySelector("#view-log.grid");
+  const beforeFoot = grid.querySelector(".foot");
+
+  const card = document.createElement("button");
+  card.className = "card submission";
+  card.dataset.submission = key;
+  card.setAttribute("aria-label", "Log " + (LABELS[key] || key));
+
+  card.innerHTML = `
+    <div class="icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="8" stroke-width="1.5"/>
+        <path d="M8 12h8" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div>
+      <h3>${LABELS[key] || key}</h3>
+      <div class="muted">Tap to log vs belt</div>
+      <span class="tap">White • Blue • Purple • Brown • Black</span>
+    </div>
+    <div class="count" id="count-${key}">0</div>
+  `;
+
+  // same behavior as your existing cards
+  card.addEventListener("click", () => {
+    openSheet(key);
+    vibrate(8);
+  });
+  document.getElementById("addBtn").addEventListener("click", addSubmissionFlow);
+
+
+  grid.insertBefore(card, beforeFoot);
+}
+
+// Ensure DATA has a zeroed belt map for a key
+function ensureZeroed(key) {
+  const zero = { white:0, blue:0, purple:0, brown:0, black:0 };
+  if (!DATA.submissions[key]) DATA.submissions[key] = { ...zero };
+}
+
+// Add a new submission via prompt
+function addSubmissionFlow() {
+  const name = (prompt("Submission name (e.g., Triangle):") || "").trim();
+  if (!name) return;
+
+  let key = slugify(name);
+  if (!key) return alert("That name doesn’t produce a valid key.");
+
+  // Ensure uniqueness (triangle, triangle_2, ...)
+  let base = key, i = 2;
+  while (SUBMISSIONS.includes(key)) { key = `${base}_${i++}`; }
+
+  // Update in-memory structures
+  SUBMISSIONS.push(key);
+  LABELS[key] = name;
+  ensureZeroed(key);
+
+  // Persist
+  writeData(DATA);
+
+  // Render a new card and update counts/stats
+  renderCard(key);
+  refreshCards();
+  if (!document.getElementById("view-stats").hasAttribute("hidden")) buildStats();
+
+  toast(`Added "${name}"`);
+  vibrate(12);
+}
+
+
     // ------- Init -------
+    // Render cards for dynamically added submissions (beyond the 3 hardcoded)
+SUBMISSIONS.forEach((key) => {
+  if (!document.getElementById("count-" + key)) {
+    // Make sure DATA has storage for it
+    ensureZeroed(key);
+    renderCard(key);
+  }
+});
+
     refreshCards();
+    
   </script>
   <script>
 if ('serviceWorker' in navigator) {
