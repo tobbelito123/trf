@@ -1,347 +1,556 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Neon Pulse</title>
+  <meta charset="utf-8" />
+  <title>BJJ Submissions Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0ea5e9" />
+
   <style>
-    body, html {
+    /* --- Base / Reset --- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-      font-family: 'Arial', sans-serif;
-      touch-action: none;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-tap-highlight-color: transparent;
     }
 
-    #gameContainer {
-      position: relative;
-      width: 100%;
-      height: 100%;
+    /* --- Theme --- */
+    :root {
+      --bg: #0b1020;
+      --card: #121830;
+      --card-2: #0f1428;
+      --fg: #eaf1ff;
+      --muted: #b7c4e1;
+      --primary: #0ea5e9; /* sky */
+      --primary-2: #22d3ee; /* cyan accent */
+      --ring: rgba(34, 211, 238, 0.35);
+      --shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+
+      --white: #ffffff;
+      --blue: #1e40af;
+      --purple: #6d28d9;
+      --brown: #7c2d12;
+      --black: #0b0b0b;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8ff;
+        --card: #ffffff;
+        --card-2: #f2f5ff;
+        --fg: #0b1020;
+        --muted: #475569;
+        --shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+      }
     }
 
-    #player {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      background: #ff0055;
-      border-radius: 50%;
-      box-shadow: 0 0 20px #ff0055;
-      z-index: 2;
+    /* --- Layout --- */
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      padding: 16px clamp(12px, 4vw, 20px) calc(16px + env(safe-area-inset-bottom));
+      gap: 14px;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, rgba(34,211,238,0.06), transparent);
+      border-radius: 16px;
+    }
+    .title {
+      font-weight: 800; letter-spacing: 0.3px; font-size: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .title .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: radial-gradient(40% 40% at 30% 30%, var(--primary-2), var(--primary));
+      box-shadow: 0 0 18px var(--ring);
+    }
+    .actions {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .ghost {
+      background: transparent; border: 1px solid rgba(148,163,184,0.25);
+      color: var(--muted); padding: 8px 10px; border-radius: 10px;
+      font-size: 13px;
     }
 
-    .collectible {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      background: #00ff88;
-      border-radius: 50%;
-      box-shadow: 0 0 15px #00ff88;
+    /* --- Tabs --- */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--card-2);
+      border-radius: 14px; padding: 6px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+    .tab {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      padding: 10px 12px; border-radius: 10px; font-weight: 700; font-size: 14px;
+    }
+    .tab.active {
+      color: var(--fg);
+      background:
+        linear-gradient(180deg, rgba(34,211,238,0.12), rgba(14,165,233,0.18));
+      box-shadow: inset 0 0 0 1px rgba(14,165,233,0.35), 0 8px 20px rgba(2, 6, 23, 0.22);
     }
 
-    .obstacle {
-      position: absolute;
-      background: #ff2200;
-      box-shadow: 0 0 15px #ff2200;
-      border-radius: 5px;
+    main { display: grid; gap: 14px; }
+
+    /* --- Cards --- */
+    .grid {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148,163,184,0.12);
+      display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 12px;
+    }
+    .icon {
+      width: 60px; height: 60px; border-radius: 16px;
+      display: grid; place-items: center;
+      background: radial-gradient(60% 60% at 35% 30%, rgba(34,211,238,0.4), rgba(14,165,233,0.15));
+      border: 1px solid rgba(14,165,233,0.3);
+    }
+    .icon svg { width: 32px; height: 32px; opacity: 0.95; }
+    .card h3 { margin: 0 0 6px; font-size: 16px; letter-spacing: 0.2px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .count {
+      font-weight: 800; font-size: 20px; letter-spacing: 0.3px;
+      padding: 6px 10px; border-radius: 10px; min-width: 44px; text-align: center;
+      background: linear-gradient(180deg, rgba(34,211,238,0.12), rgba(14,165,233,0.18));
+      border: 1px solid rgba(14,165,233,0.35);
+    }
+    .tap {
+      display: inline-block; margin-top: 6px;
+      font-size: 12px; color: var(--primary-2); opacity: 0.9;
     }
 
-    #hud {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: #fff;
-      font-size: 24px;
-      text-shadow: 0 0 10px #00ffff;
+    /* --- Belt sheet (bottom sheet) --- */
+    .sheet-backdrop {
+      position: fixed; inset: 0; background: rgba(2,6,23,0.4);
+      opacity: 0; pointer-events: none; transition: opacity .2s ease;
+    }
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      transform: translateY(100%);
+      transition: transform .3s ease;
+      background: var(--card);
+      border-top-left-radius: 16px; border-top-right-radius: 16px;
+      box-shadow: 0 -10px 30px rgba(2, 6, 23, 0.4);
+      border-top: 1px solid rgba(148,163,184,0.18);
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+    .sheet h4 { margin: 4px 2px 10px; font-size: 15px; }
+    .belts {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    }
+    .belt {
+      appearance: none; border: 0; border-radius: 12px; padding: 12px 8px;
+      background: var(--card-2);
+      color: var(--fg);
+      font-weight: 700; font-size: 12px; letter-spacing: 0.2px;
+      border: 1px solid rgba(148,163,184,0.16);
+    }
+    .belt .swatch {
+      display: block; height: 16px; border-radius: 6px; margin-bottom: 8px;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+    .belt[data-belt="white"] .swatch { background: var(--white); }
+    .belt[data-belt="blue"] .swatch { background: var(--blue); }
+    .belt[data-belt="purple"] .swatch { background: var(--purple); }
+    .belt[data-belt="brown"] .swatch { background: var(--brown); }
+    .belt[data-belt="black"] .swatch { background: var(--black); }
+
+    .sheet .hint { margin-top: 10px; color: var(--muted); font-size: 12px; }
+
+    /* --- Stats --- */
+    .stat-card { padding: 16px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(148,163,184,0.12); }
+    .stat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .stat-head h3 { margin: 0; font-size: 15px; }
+    .stat-head .total { font-weight: 800; }
+    .bar {
+      height: 12px; border-radius: 10px; display: grid; grid-auto-flow: column; overflow: hidden;
+      margin-top: 10px; outline: 1px solid rgba(148,163,184,0.18);
+    }
+    .seg { height: 100%; }
+    .seg.white { background: linear-gradient(180deg, #fff, #e5e7eb); }
+    .seg.blue { background: linear-gradient(180deg, #3b82f6, #1e40af); }
+    .seg.purple { background: linear-gradient(180deg, #a78bfa, #6d28d9); }
+    .seg.brown { background: linear-gradient(180deg, #b45309, #7c2d12); }
+    .seg.black { background: linear-gradient(180deg, #111827, #0b0b0b); }
+    .legend {
+      margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; font-size: 12px; color: var(--muted);
+    }
+    .chip { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; }
+    .dot.white { background: #fff; outline: 1px solid #cbd5e1; }
+    .dot.blue { background: #1e40af; }
+    .dot.purple { background: #6d28d9; }
+    .dot.brown { background: #7c2d12; }
+    .dot.black { background: #0b0b0b; outline: 1px solid #e5e7eb; }
+
+    /* --- Footer row --- */
+    .foot {
+      display: flex; gap: 10px; justify-content: space-between; align-items: center;
+      margin-top: 2px; color: var(--muted); font-size: 12px;
+    }
+    .reset {
+      background: transparent; border: 1px solid rgba(239,68,68,0.35); color: #fecaca;
+      padding: 8px 10px; border-radius: 10px; font-size: 12px;
     }
 
-    #highscore {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      color: #fff;
-      font-size: 24px;
-      text-shadow: 0 0 10px #ff00ff;
+    /* --- Toast --- */
+    .toast {
+      position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e2f7f6; padding: 10px 14px; border-radius: 12px;
+      border: 1px solid rgba(34,211,238,0.35);
+      box-shadow: var(--shadow);
+      opacity: 0; transition: opacity .2s ease, transform .2s ease;
+      font-size: 13px; pointer-events: none;
     }
-
-    /* A label under the high score to show who set it */
-    #highscoreUser {
-      position: fixed;
-      top: 40px;
-      right: 10px;
-      color: #fff;
-      font-size: 20px;
-      text-shadow: 0 0 10px #ff00ff;
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
-  <div id="gameContainer">
-    <div id="hud">Score: <span id="score">0</span></div>
-    <div id="highscore">High: <span id="highscoreValue">0</span></div>
-    <!-- Shows the username for the global high score -->
-    <div id="highscoreUser">User: <span id="highscoreUserValue">N/A</span></div>
+  <div class="wrap">
+    <header>
+      <div class="title"><span class="dot"></span> BJJ Submissions Tracker</div>
+      <div class="actions">
+        <button class="ghost" id="exportBtn" title="Export data as JSON">Export</button>
+        <button class="ghost" id="importBtn" title="Import data from JSON">Import</button>
+      </div>
+    </header>
 
-    <div id="player"></div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab active" data-tab="log" role="tab" aria-selected="true">Log</button>
+      <button class="tab" data-tab="stats" role="tab" aria-selected="false">Stats</button>
+    </nav>
+
+    <main>
+      <!-- Log view -->
+      <section id="view-log" class="grid" role="tabpanel" aria-labelledby="tab-log">
+        <!-- Armbar -->
+        <button class="card submission" data-submission="armbar" aria-label="Log Armbar">
+          <div class="icon" aria-hidden="true">
+            <!-- Simple inline SVG icon (arm-ish) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M3 12c2-2 6-6 9-6 5 0 7 6 7 6s-2 6-7 6c-3 0-7-4-9-6z" stroke-width="1.5"/>
+              <path d="M9 10l6 4" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Armbar</h3>
+            <div class="muted">Tap to log vs belt</div>
+            <span class="tap">White • Blue • Purple • Brown • Black</span>
+          </div>
+          <div class="count" id="count-armbar">0</div>
+        </button>
+
+        <!-- Guillotine -->
+        <button class="card submission" data-submission="guillotine" aria-label="Log Guillotine">
+          <div class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="9" cy="8" r="3" stroke-width="1.5"/>
+              <path d="M12 10c2 0 4 1 6 3l2 2" stroke-width="1.5"/>
+              <path d="M5 21c2-3 4-5 7-5 1.5 0 3 .5 4.5 1.5" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Guillotine</h3>
+            <div class="muted">Tap to log vs belt</div>
+            <span class="tap">White • Blue • Purple • Brown • Black</span>
+          </div>
+          <div class="count" id="count-guillotine">0</div>
+        </button>
+
+        <!-- Rear-Naked Choke -->
+        <button class="card submission" data-submission="rear_naked_choke" aria-label="Log Rear-Naked Choke">
+          <div class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="7" r="3" stroke-width="1.5"/>
+              <path d="M7 21c0-3.5 2.5-6 5-6s5 2.5 5 6" stroke-width="1.5"/>
+              <path d="M8 12c1.2 1 2.7 1.5 4 1.5S14.8 13 16 12" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Rear-Naked Choke</h3>
+            <div class="muted">Tap to log vs belt</div>
+            <span class="tap">White • Blue • Purple • Brown • Black</span>
+          </div>
+          <div class="count" id="count-rear_naked_choke">0</div>
+        </button>
+
+        <div class="foot">
+          <div>Tip: add to Home Screen for an app-like feel.</div>
+          <button class="reset" id="resetBtn" title="Reset all counts">Reset</button>
+        </div>
+      </section>
+
+      <!-- Stats view -->
+      <section id="view-stats" hidden role="tabpanel" aria-labelledby="tab-stats">
+        <div id="statsList" class="grid"></div>
+      </section>
+    </main>
   </div>
 
-  <!-- Use type="module" so we can import Firebase v9+ -->
-  <script type="module">
-    /********************************************************
-     * 1) Import Firebase and Firestore
-     *******************************************************/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      setDoc 
-    } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+  <!-- Bottom sheet for belt selection -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="sheet" id="beltSheet" aria-modal="true" role="dialog" aria-labelledby="sheetTitle">
+    <h4 id="sheetTitle">Who did you hit it against?</h4>
+    <div class="belts" role="group" aria-label="Opponent belt">
+      <button class="belt" data-belt="white"><span class="swatch"></span>White</button>
+      <button class="belt" data-belt="blue"><span class="swatch"></span>Blue</button>
+      <button class="belt" data-belt="purple"><span class="swatch"></span>Purple</button>
+      <button class="belt" data-belt="brown"><span class="swatch"></span>Brown</button>
+      <button class="belt" data-belt="black"><span class="swatch"></span>Black</button>
+    </div>
+    <div class="hint">Tap a belt to log 1 rep for the selected submission.</div>
+  </div>
 
-    /********************************************************
-     * 2) Your Firebase config
-     *******************************************************/
-    const firebaseConfig = {
-      apiKey: "AIzaSyDjhyIwTDLkPRt8Erw3_VszEfcnbSkHhOw",
-      authDomain: "neonpulse-7e6aa.firebaseapp.com",
-      projectId: "neonpulse-7e6aa",
-      storageBucket: "neonpulse-7e6aa.firebasestorage.app",
-      messagingSenderId: "77649154549",
-      appId: "1:77649154549:web:0d538d42159749162810bc"
+  <!-- Toast -->
+  <div class="toast" id="toast">Saved</div>
+
+  <script>
+    // ------- Storage & Data -------
+    const KEY = "bjj-submissions-v1";
+    const SUBMISSIONS = ["armbar", "guillotine", "rear_naked_choke"];
+    const LABELS = {
+      armbar: "Armbar",
+      guillotine: "Guillotine",
+      rear_naked_choke: "Rear-Naked Choke",
     };
+    const BELTS = ["white","blue","purple","brown","black"];
 
-    /********************************************************
-     * 3) Initialize Firebase & Firestore
-     *******************************************************/
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // We'll store a separate global highscore from Firestore
-    let globalHighscore = 0;
-    let globalHighscoreUser = "N/A";
-
-    // HTML references
-    const gameContainer = document.getElementById('gameContainer');
-    const player = document.getElementById('player');
-    const scoreElement = document.getElementById('score');
-    const highscoreElement = document.getElementById('highscoreValue');
-    const highscoreUserElement = document.getElementById('highscoreUserValue');
-
-    // localStorage-based highscore
-    let score = 0;
-    let highscore = localStorage.getItem('neonPulseHighscore') || 0;
-    let obstacles = [];
-    let collectibles = [];
-    let isGameActive = true;
-    let playerX = 50;
-    let playerY = 50;
-
-    // Initialize local highscore text
-    player.style.left = '50%';
-    player.style.top = '50%';
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    document.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    });
-
-    document.addEventListener('touchmove', (e) => {
-      if(!isGameActive) return;
-      e.preventDefault();
-      
-      const touchX = e.touches[0].clientX;
-      const touchY = e.touches[0].clientY;
-      
-      playerX += touchX - touchStartX;
-      playerY += touchY - touchStartY;
-
-      // Keep player in bounds
-      playerX = Math.max(15, Math.min(window.innerWidth - 15, playerX));
-      playerY = Math.max(15, Math.min(window.innerHeight - 15, playerY));
-
-      player.style.left = `${playerX}px`;
-      player.style.top = `${playerY}px`;
-
-      touchStartX = touchX;
-      touchStartY = touchY;
-    });
-
-    /********************************************************
-     * Firestore logic
-     *******************************************************/
-    // 1) Load Firestore's global high score at startup
-    async function loadGlobalHighscore() {
-      const docRef = doc(db, "highscore", "global");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        globalHighscore = data.score;
-        globalHighscoreUser = data.user || "N/A";
-        console.log("Loaded global highscore:", globalHighscore, "by", globalHighscoreUser);
-      } else {
-        console.log("No global doc found. default=0 / N/A");
-        globalHighscore = 0;
-        globalHighscoreUser = "N/A";
-      }
-      // Display it
-      highscoreElement.textContent = globalHighscore;
-      highscoreUserElement.textContent = globalHighscoreUser;
+    function defaultData() {
+      const zero = { white:0, blue:0, purple:0, brown:0, black:0 };
+      return {
+        submissions: {
+          armbar: {...zero},
+          guillotine: {...zero},
+          rear_naked_choke: {...zero}
+        }
+      };
     }
 
-    // 2) If the player's final score is higher than the global, prompt them for a username
-    async function updateGlobalHighscoreIfHigher(newScore) {
-      if (newScore <= globalHighscore) return; // Not beating global
-
-      // Prompt for a username if they set a new global high
-      let newUser = prompt("Congrats, you set a new global high score! Enter your name (max 20 chars):");
-      if (!newUser) {
-        newUser = "Anonymous";
-      }
-      // Force max 20 chars
-      newUser = newUser.slice(0, 20).trim();
-
+    function readData() {
       try {
-        const docRef = doc(db, "highscore", "global");
-        await setDoc(docRef, {
-          score: newScore,
-          user: newUser
-        });
-        globalHighscore = newScore;
-        globalHighscoreUser = newUser;
-        console.log("Global highscore updated to", newScore, "by", newUser);
-
-        // Update the DOM
-        highscoreElement.textContent = globalHighscore;
-        highscoreUserElement.textContent = globalHighscoreUser;
-      } catch (err) {
-        console.error("Error updating global highscore:", err);
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return defaultData();
+        const parsed = JSON.parse(raw);
+        // Ensure all keys exist (future-proof)
+        const base = defaultData();
+        for (const s of SUBMISSIONS) {
+          parsed.submissions ??= {};
+          parsed.submissions[s] ??= {...base.submissions[s]};
+          for (const b of BELTS) parsed.submissions[s][b] ??= 0;
+        }
+        return parsed;
+      } catch {
+        return defaultData();
       }
     }
 
-    /********************************************************
-     * Original Neon Pulse logic
-     *******************************************************/
-    function createCollectible() {
-      const collectible = document.createElement('div');
-      collectible.className = 'collectible';
-      collectible.style.left = `${Math.random() * 90 + 5}%`;
-      collectible.style.top = `${Math.random() * 90 + 5}%`;
-      gameContainer.appendChild(collectible);
-      collectibles.push(collectible);
+    function writeData(data) {
+      localStorage.setItem(KEY, JSON.stringify(data));
     }
 
-    function createObstacle() {
-      const obstacle = document.createElement('div');
-      obstacle.className = 'obstacle';
-      obstacle.style.width = `${Math.random() * 50 + 30}px`;
-      obstacle.style.height = `${Math.random() * 50 + 30}px`;
-      obstacle.style.left = `${Math.random() * 90 + 5}%`;
-      obstacle.style.top = `${Math.random() * 90 + 5}%`;
-      gameContainer.appendChild(obstacle);
-      obstacles.push(obstacle);
+    // ------- UI helpers -------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    function vibrate(ms=12){ if (navigator.vibrate) try { navigator.vibrate(ms); } catch {} }
+    function toast(msg) {
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 1200);
     }
 
-    function checkCollisions() {
-      const playerRect = player.getBoundingClientRect();
+    // ------- State -------
+    let DATA = readData();
+    let pendingSubmission = null;
 
-      // Check collectibles
-      collectibles.forEach((collectible, index) => {
-        const cRect = collectible.getBoundingClientRect();
-        if (Math.hypot(
-            playerRect.left - cRect.left,
-            playerRect.top - cRect.top
-          ) < 30) {
-          collectible.remove();
-          collectibles.splice(index, 1);
-          score += 100;
-          scoreElement.textContent = score;
-          createCollectible();
+    // Update counts on cards
+    function totalFor(sub) {
+      const o = DATA.submissions[sub];
+      return BELTS.reduce((n,b) => n + (o[b]||0), 0);
+    }
+    function refreshCards() {
+      for (const s of SUBMISSIONS) {
+        const el = document.getElementById("count-"+s);
+        if (el) el.textContent = totalFor(s);
+      }
+    }
+
+    // Build stats list
+    function buildStats() {
+      const list = $("#statsList");
+      list.innerHTML = "";
+      for (const s of SUBMISSIONS) {
+        const totals = DATA.submissions[s];
+        const sum = totalFor(s);
+        const frag = document.createElement("div");
+        frag.className = "stat-card";
+        const pct = b => sum ? Math.round((totals[b]/sum)*100) : 0;
+
+        // Build bar segments
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        for (const b of BELTS) {
+          const seg = document.createElement("div");
+          seg.className = "seg " + b;
+          seg.style.width = (sum ? (totals[b]/sum*100) : 0) + "%";
+          bar.appendChild(seg);
         }
+
+        // Legend items
+        const legend = document.createElement("div");
+        legend.className = "legend";
+        for (const b of BELTS) {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.innerHTML = `<span class="dot ${b}"></span>${b[0].toUpperCase()+b.slice(1)} ${sum?`· ${totals[b]} (${pct(b)}%)`:"· 0 (0%)"}`;
+          legend.appendChild(chip);
+        }
+
+        frag.innerHTML = `
+          <div class="stat-head">
+            <h3>${LABELS[s]}</h3>
+            <div class="total">${sum}</div>
+          </div>
+        `;
+        frag.appendChild(bar);
+        frag.appendChild(legend);
+        list.appendChild(frag);
+      }
+    }
+
+    // ------- Belt sheet -------
+    const sheet = $("#beltSheet");
+    const backdrop = $("#sheetBackdrop");
+    function openSheet(forSubmission) {
+      pendingSubmission = forSubmission;
+      $("#sheetTitle").textContent = `Who did you hit ${LABELS[forSubmission]} against?`;
+      sheet.classList.add("open");
+      backdrop.classList.add("open");
+    }
+    function closeSheet() {
+      sheet.classList.remove("open");
+      backdrop.classList.remove("open");
+      setTimeout(() => { pendingSubmission = null; }, 150);
+    }
+    backdrop.addEventListener("click", closeSheet);
+
+    // Handle submission card taps
+    $$(".submission").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const sub = btn.dataset.submission;
+        openSheet(sub);
+        vibrate(8);
       });
+    });
 
-      // Check obstacles
-      obstacles.forEach(obstacle => {
-        const oRect = obstacle.getBoundingClientRect();
-        if (Math.abs(playerRect.left - oRect.left) < 30 &&
-            Math.abs(playerRect.top - oRect.top) < 30) {
-          gameOver();
-        }
+    // Handle belt selection
+    $$(".belt").forEach(b => {
+      b.addEventListener("click", () => {
+        const belt = b.dataset.belt;
+        if (!pendingSubmission) return;
+        DATA.submissions[pendingSubmission][belt] += 1;
+        writeData(DATA);
+        refreshCards();
+        // If stats tab is visible, update it too
+        if (!$("#view-stats").hasAttribute("hidden")) buildStats();
+        toast(`+1 ${LABELS[pendingSubmission]} vs ${belt[0].toUpperCase()+belt.slice(1)} belt`);
+        vibrate(12);
+        closeSheet();
       });
-    }
+    });
 
-    function gameOver() {
-      isGameActive = false;
-      // Update local highscore if needed
-      if (score > highscore) {
-        highscore = score;
-        localStorage.setItem('neonPulseHighscore', highscore);
-        highscoreElement.textContent = highscore;
+    // ------- Tabs -------
+    const tabs = $$(".tab");
+    tabs.forEach(t => t.addEventListener("click", () => {
+      tabs.forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      const show = t.dataset.tab;
+      if (show === "log") {
+        $("#view-log").hidden = false;
+        $("#view-stats").hidden = true;
+      } else {
+        $("#view-log").hidden = true;
+        $("#view-stats").hidden = false;
+        buildStats();
       }
+    }));
 
-      // Also update global Firestore highscore if higher
-      updateGlobalHighscoreIfHigher(score);
-
-      // Flash effect
-      document.body.style.backgroundColor = '#ff0000';
-      setTimeout(() => {
-        document.body.style.backgroundColor = '#000';
-        resetGame();
-      }, 500);
-    }
-
-    function resetGame() {
-      // Clear elements
-      obstacles.forEach(o => o.remove());
-      collectibles.forEach(c => c.remove());
-      obstacles = [];
-      collectibles = [];
-
-      // Reset player
-      playerX = window.innerWidth / 2;
-      playerY = window.innerHeight / 2;
-      player.style.left = `${playerX}px`;
-      player.style.top = `${playerY}px`;
-
-      // Reset score
-      score = 0;
-      scoreElement.textContent = score;
-
-      // Create new elements
-      for(let i = 0; i < 5; i++) createCollectible();
-      for(let i = 0; i < 3; i++) createObstacle();
-
-      isGameActive = true;
-    }
-
-    function gameLoop() {
-      if(isGameActive) {
-        checkCollisions();
-        
-        // Random obstacle movement
-        obstacles.forEach(obstacle => {
-          obstacle.style.left = `${parseFloat(obstacle.style.left) + (Math.random() - 0.5)}%`;
-          obstacle.style.top = `${parseFloat(obstacle.style.top) + (Math.random() - 0.5)}%`;
-        });
-
-        // Gradually increase difficulty
-        if(Math.random() < 0.02) {
-          createObstacle();
-        }
+    // ------- Reset / Import / Export -------
+    $("#resetBtn").addEventListener("click", () => {
+      if (confirm("Reset all counts? This cannot be undone.")) {
+        DATA = defaultData();
+        writeData(DATA);
+        refreshCards();
+        if (!$("#view-stats").hasAttribute("hidden")) buildStats();
+        toast("All data reset");
+        vibrate(20);
       }
-      requestAnimationFrame(gameLoop);
-    }
+    });
 
-    // Start the game AFTER loading global Firestore highscore
-    async function startGame() {
-      await loadGlobalHighscore();
-      resetGame();
-      gameLoop();
-    }
+    $("#exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(DATA, null, 2)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "bjj-submissions.json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    });
 
-    startGame();
+    $("#importBtn").addEventListener("click", async () => {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = "application/json";
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const obj = JSON.parse(String(reader.result));
+            if (!obj?.submissions) throw new Error("Invalid file");
+            DATA = obj;
+            writeData(DATA);
+            refreshCards();
+            if (!$("#view-stats").hasAttribute("hidden")) buildStats();
+            toast("Import successful");
+            vibrate(16);
+          } catch {
+            alert("Could not import that file.");
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    });
+
+    // ------- Init -------
+    refreshCards();
   </script>
 </body>
 </html>
