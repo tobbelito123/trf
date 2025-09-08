@@ -9,6 +9,14 @@
 <meta name="theme-color" content="#0ea5e9">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
+  <script>
+  if (!/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // Not a mobile device → redirect to desktop page
+    window.location.href = "desktop.html";
+  }
+</script>
+
+
 
   <style>
     /* --- Base / Reset --- */
