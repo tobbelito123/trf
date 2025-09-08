@@ -5,69 +5,92 @@
   <title>BJJ Submissions Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --bg: #f9fafb;
+      --fg: #111827;
+      --muted: #4b5563;
+      --accent1: #0ea5e9;
+      --accent2: #22d3ee;
+      --card: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --fg: #eaf1ff;
+        --muted: #9ca3af;
+        --card: #121830;
+      }
+    }
+
     body {
       margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-      background: linear-gradient(135deg, #0b1020, #121830);
-      color: #eaf1ff;
+      background: var(--bg);
+      color: var(--fg);
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 40px 20px;
+      padding: 60px 20px;
     }
     h1 {
-      font-size: 2.2rem;
-      margin-bottom: 0.5em;
-      background: linear-gradient(90deg, #22d3ee, #0ea5e9);
+      font-size: clamp(2.5rem, 4vw, 3.5rem);
+      margin-bottom: 0.6em;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     p {
-      max-width: 640px;
-      line-height: 1.6;
-      margin-bottom: 1.2em;
+      max-width: 900px;
+      font-size: 1.25rem;
+      line-height: 1.7;
+      margin-bottom: 1.5em;
+      color: var(--muted);
     }
     .screenshot {
-      margin: 30px 0;
-      max-width: 360px;
-      border-radius: 20px;
+      margin: 40px 0;
+      max-width: 400px;
+      border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.4);
     }
     .screenshot img {
       width: 100%;
       display: block;
     }
     .cta {
-      background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
       color: white;
       border: none;
-      padding: 14px 28px;
-      font-size: 1rem;
-      border-radius: 12px;
+      padding: 20px 40px;
+      font-size: 1.4rem;
+      border-radius: 14px;
       cursor: pointer;
       text-decoration: none;
       font-weight: 700;
       transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-block;
     }
     .cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(34,211,238,0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(34,211,238,0.5);
     }
     footer {
-      margin-top: 40px;
-      font-size: 0.9rem;
-      color: #9ca3af;
+      margin-top: 60px;
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 700px;
+      line-height: 1.6;
     }
   </style>
 </head>
 <body>
   <h1>BJJ Submissions Tracker</h1>
+
   <p>
-    Track your progress on the mat with a clean and simple mobile app.  
-    Every time you land a submission in sparring, log it in seconds — select the submission and your opponent’s belt level.  
-    Over time, see which moves you hit most, and against which belts.
+    Take your training to the next level.  
+    Log every submission you land in sparring, track who you hit it against, and discover patterns in your game.  
+    See your favorite moves rise to the top and watch your progress belt by belt.
   </p>
 
   <div class="screenshot">
@@ -75,14 +98,18 @@
   </div>
 
   <p>
-    Works completely offline and stores your data securely in your phone’s cache.  
-    No accounts, no cloud — just your training, your stats.
+    The app works fully offline and keeps your stats safely on your device — no accounts, no cloud.  
+    Just open it on your phone, start rolling, and let the data guide your growth.
   </p>
 
-  <a class="cta" href="#">Open on Your Phone 📱</a>
+  <a class="cta" href="index.html">Open on Your Phone 📱</a>
 
   <footer>
-    Tip: On your phone, you can even <strong>Add it to your Home Screen</strong> for a true app-like experience.
+    💡 To install:  
+    On <strong>Android</strong>, Chrome may suggest installation automatically.  
+    On <strong>iPhone</strong>, open Safari’s Share menu → <em>Add to Home Screen</em>.  
+    <br><br>
+    Built for grapplers who want to measure progress and sharpen their edge.
   </footer>
 </body>
 </html>
