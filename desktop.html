@@ -2,114 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>BJJ Submissions Tracker</title>
+  <title>BJJ Submissions Tracker — Overview</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --bg: #f9fafb;
-      --fg: #111827;
-      --muted: #4b5563;
-      --accent1: #0ea5e9;
-      --accent2: #22d3ee;
-      --card: #ffffff;
+    :root{
+      --bg:#f9fafb; --fg:#111827; --muted:#4b5563; --card:#ffffff;
+      --accent1:#0ea5e9; --accent2:#22d3ee; --ring:rgba(34,211,238,.35);
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0b1020;
-        --fg: #eaf1ff;
-        --muted: #9ca3af;
-        --card: #121830;
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b1020; --fg:#eaf1ff; --muted:#9ca3af; --card:#121830;
+        --ring:rgba(34,211,238,.25);
       }
     }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+      background:var(--bg); color:var(--fg); display:flex; flex-direction:column; align-items:center;
+      padding:64px 24px; text-align:center;
+    }
+    .wrap{max-width:1100px; width:100%;}
+    h1{
+      font-size:clamp(2.6rem,4vw,3.6rem); margin:0 0 .25em;
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .lead{
+      margin:0 auto 1.2em; max-width:950px; font-size:clamp(1.2rem,1.6vw,1.35rem); line-height:1.75; color:var(--muted);
+    }
 
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-      background: var(--bg);
-      color: var(--fg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 60px 20px;
+    /* Phone mockup */
+    .showcase{
+      display:grid; grid-template-columns: 1fr 1fr; gap:48px; align-items:center; justify-items:center;
+      margin:48px auto; max-width:1100px;
     }
-    h1 {
-      font-size: clamp(2.5rem, 4vw, 3.5rem);
-      margin-bottom: 0.6em;
-      background: linear-gradient(90deg, var(--accent1), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    @media (max-width: 980px){ .showcase{ grid-template-columns: 1fr; gap:36px; } }
+
+    .phone{
+      position:relative; width:360px; height:740px; border-radius:40px;
+      background:linear-gradient(145deg,#0d1226,#161d3a);
+      box-shadow: 0 30px 70px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.05);
+      border:1px solid rgba(148,163,184,.18);
+      padding:16px; display:flex; align-items:center; justify-content:center;
     }
-    p {
-      max-width: 900px;
-      font-size: 1.25rem;
-      line-height: 1.7;
-      margin-bottom: 1.5em;
-      color: var(--muted);
+    @media (prefers-color-scheme: light){
+      .phone{
+        background:linear-gradient(145deg,#dfe8ff,#eef2ff);
+        box-shadow: 0 30px 60px rgba(0,0,0,.15), inset 0 0 0 2px rgba(0,0,0,.04);
+        border-color: rgba(0,0,0,.08);
+      }
     }
-    .screenshot {
-      margin: 40px 0;
-      max-width: 400px;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+    .phone::before{
+      /* notch */
+      content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%);
+      width:160px; height:24px; background:var(--card); border-radius:0 0 16px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
     }
-    .screenshot img {
-      width: 100%;
-      display: block;
+    .phone::after{
+      /* side button */
+      content:""; position:absolute; right:-3px; top:120px; width:4px; height:60px; border-radius:2px;
+      background:linear-gradient(180deg,#94a3b8,#64748b);
+      opacity:.4;
     }
-    .cta {
-      background: linear-gradient(90deg, var(--accent1), var(--accent2));
-      color: white;
-      border: none;
-      padding: 20px 40px;
-      font-size: 1.4rem;
-      border-radius: 14px;
-      cursor: pointer;
-      text-decoration: none;
-      font-weight: 700;
-      transition: transform 0.2s, box-shadow 0.2s;
-      display: inline-block;
+    .screen{
+      width:100%; height:100%; border-radius:28px; overflow:hidden; background:#000;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
     }
-    .cta:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(34,211,238,0.5);
+    .screen img{ display:block; width:100%; height:100%; object-fit:cover; }
+
+    .bullets{
+      text-align:left; max-width:600px; background:var(--card); border-radius:20px; padding:24px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.15); border:1px solid rgba(148,163,184,.15);
     }
-    footer {
-      margin-top: 60px;
-      font-size: 1.1rem;
-      color: var(--muted);
-      max-width: 700px;
-      line-height: 1.6;
+    .bullets h2{ margin:0 0 .6em; font-size:clamp(1.6rem,2vw,2rem); }
+    .bullets ul{ margin:0; padding-left:1.1em; display:grid; gap:12px; font-size:1.15rem; color:var(--fg); }
+    .bullets li{ line-height:1.6; color:var(--muted); }
+    .bullets li strong{ color:var(--fg); }
+
+    .cta{
+      margin:40px 0 0; display:inline-block; text-decoration:none; font-weight:800; letter-spacing:.2px;
+      padding:18px 28px; border-radius:14px; font-size:1.2rem; color:#fff;
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      box-shadow: 0 10px 24px rgba(34,211,238,.35), inset 0 0 0 1px rgba(255,255,255,.15);
+      transition: transform .15s ease, box-shadow .15s ease;
     }
+    .cta:hover{ transform: translateY(-2px); box-shadow: 0 14px 32px rgba(34,211,238,.45); }
+
+    footer{
+      margin:56px auto 0; max-width:900px; color:var(--muted); font-size:1.05rem; line-height:1.7;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
   </style>
 </head>
 <body>
-  <h1>BJJ Submissions Tracker</h1>
+  <div class="wrap">
+    <h1>BJJ Submissions Tracker</h1>
+    <p class="lead">
+      Track what actually works in sparring. Log each submission you land and the <strong>opponent’s belt level</strong>
+      (white, blue, purple, brown, black). The app keeps totals and simple breakdowns so you can
+      see your A-game develop over time. <em>No accounts, no cloud — your data stays on your phone and works offline.</em>
+    </p>
 
-  <p>
-    Take your training to the next level.  
-    Log every submission you land in sparring, track who you hit it against, and discover patterns in your game.  
-    See your favorite moves rise to the top and watch your progress belt by belt.
-  </p>
+    <section class="showcase">
+      <div class="phone" aria-hidden="true">
+        <div class="screen">
+          <!-- Replace this with a real screenshot of your mobile app -->
+          <img src="screenshot.png" alt="BJJ Submissions Tracker app preview on a phone">
+        </div>
+      </div>
 
-  <div class="screenshot">
-    <img src="screenshot.png" alt="Preview of the BJJ Submissions Tracker app">
+      <div class="bullets">
+        <h2>Why grapplers like it</h2>
+        <ul>
+          <li><strong>Fast logging</strong> — tap a submission, choose belt. Back to rolling.</li>
+          <li><strong>Your stats, at a glance</strong> — totals per move and belt. See which subs you truly hit.</li>
+          <li><strong>Add your favorites</strong> — extend the list with your own submissions anytime.</li>
+          <li><strong>Offline & private</strong> — saved in your browser cache (<span class="mono">localStorage</span>) on your device.</li>
+          <li><strong>Simple by design</strong> — we track against <em>belt level</em>, not individual people.</li>
+        </ul>
+
+        <!-- Feedback CTA instead of “open app” -->
+        <a class="cta" href="mailto:submissions.tracker.app+feedback@example.com?subject=BJJ%20Submissions%20Tracker%20Feedback">
+          Send Feedback ✉️
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <strong>How to install</strong><br>
+      On <strong>Android</strong>, Chrome may suggest installation automatically (or use the browser menu → <em>Install app</em>).<br>
+      On <strong>iPhone</strong>, open in Safari and use <em>Share → Add to Home Screen</em> for an app-like experience.<br><br>
+      Data model: we store a small JSON structure in your device’s cache with submission names and a count per belt
+      (e.g. <span class="mono">{ submissions: { armbar: { white: 3, blue: 4, ... } } }</span>).
+    </footer>
   </div>
-
-  <p>
-    The app works fully offline and keeps your stats safely on your device — no accounts, no cloud.  
-    Just open it on your phone, start rolling, and let the data guide your growth.
-  </p>
-
-  <a class="cta" href="index.html">Open on Your Phone 📱</a>
-
-  <footer>
-    💡 To install:  
-    On <strong>Android</strong>, Chrome may suggest installation automatically.  
-    On <strong>iPhone</strong>, open Safari’s Share menu → <em>Add to Home Screen</em>.  
-    <br><br>
-    Built for grapplers who want to measure progress and sharpen their edge.
-  </footer>
 </body>
 </html>
