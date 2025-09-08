@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BJJ Submissions Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      background: linear-gradient(135deg, #0b1020, #121830);
+      color: #eaf1ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 0.5em;
+      background: linear-gradient(90deg, #22d3ee, #0ea5e9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      max-width: 640px;
+      line-height: 1.6;
+      margin-bottom: 1.2em;
+    }
+    .screenshot {
+      margin: 30px 0;
+      max-width: 360px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+    }
+    .screenshot img {
+      width: 100%;
+      display: block;
+    }
+    .cta {
+      background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(34,211,238,0.5);
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <h1>BJJ Submissions Tracker</h1>
+  <p>
+    Track your progress on the mat with a clean and simple mobile app.  
+    Every time you land a submission in sparring, log it in seconds — select the submission and your opponent’s belt level.  
+    Over time, see which moves you hit most, and against which belts.
+  </p>
+
+  <div class="screenshot">
+    <img src="screenshot.png" alt="Preview of the BJJ Submissions Tracker app">
+  </div>
+
+  <p>
+    Works completely offline and stores your data securely in your phone’s cache.  
+    No accounts, no cloud — just your training, your stats.
+  </p>
+
+  <a class="cta" href="#">Open on Your Phone 📱</a>
+
+  <footer>
+    Tip: On your phone, you can even <strong>Add it to your Home Screen</strong> for a true app-like experience.
+  </footer>
+</body>
+</html>
