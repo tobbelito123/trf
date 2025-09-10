@@ -332,23 +332,25 @@ tabs.forEach(t => t.addEventListener("click", () => {
       <!-- Log view -->
       <section id="view-log" class="grid" role="tabpanel" aria-labelledby="tab-log">
         <!-- Armbar -->
-        <button class="card submission" data-submission="armbar" aria-label="Log Armbar">
-          <div class="swipe-bg"></div>
-          <div class="content">
-          <div class="icon" aria-hidden="true">
-            <!-- Simple inline SVG icon (arm-ish) -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M3 12c2-2 6-6 9-6 5 0 7 6 7 6s-2 6-7 6c-3 0-7-4-9-6z" stroke-width="1.5"/>
-              <path d="M9 10l6 4" stroke-width="1.5"/>
-            </svg>
-          </div>
-          <div>
-            <h3>Armbar</h3>
-            <div class="muted">Tap to log vs belt</div>
-          </div>
-          <div class="count" id="count-armbar">0</div>
-            </div>
-        </button>
+       <button class="card submission" data-submission="armbar" aria-label="Log Armbar">
+  <div class="swipe-bg"></div>
+  <div class="content">
+    <div class="icon" aria-hidden="true">
+      <!-- SVG -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 12c2-2 6-6 9-6 5 0 7 6 7 6s-2 6-7 6c-3 0-7-4-9-6z" stroke-width="1.5"/>
+        <path d="M9 10l6 4" stroke-width="1.5"/>
+      </svg>
+    </div>
+
+    <div>
+      <h3>Armbar</h3>
+      <div class="muted">Tap to log vs belt</div>
+    </div>
+
+    <div class="count" id="count-armbar">0</div>
+  </div>
+</button>
 
         <!-- Guillotine -->
         <button class="card submission" data-submission="guillotine" aria-label="Log Guillotine">
