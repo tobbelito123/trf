@@ -30,6 +30,9 @@
       background: var(--bg);
       -webkit-tap-highlight-color: transparent;
     }
+    /* ensure hidden elements are really hidden everywhere */
+[hidden] { display: none !important; }
+
 
     /* --- Theme --- */
     :root {
@@ -98,24 +101,31 @@
     }
 
     /* --- Tabs --- */
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: var(--card-2);
-      border-radius: 14px; padding: 6px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(148,163,184,0.15);
-    }
-    .tab {
-      appearance: none; border: 0; background: transparent; color: var(--muted);
-      padding: 10px 12px; border-radius: 10px; font-weight: 700; font-size: 14px;
-    }
-    .tab.active {
-      color: var(--fg);
-      background:
-        linear-gradient(180deg, rgba(34,211,238,0.12), rgba(14,165,233,0.18));
-      box-shadow: inset 0 0 0 1px rgba(14,165,233,0.35), 0 8px 20px rgba(2, 6, 23, 0.22);
-    }
+// ------- Tabs -------
+const tabs = $$(".tab");
+tabs.forEach(t => t.addEventListener("click", () => {
+  const log = document.getElementById("view-log");
+  const stats = document.getElementById("view-stats");
+
+  // update tab visual + aria
+  tabs.forEach(x => { 
+    x.classList.remove("active"); 
+    x.setAttribute("aria-selected","false");
+  });
+  t.classList.add("active");
+  t.setAttribute("aria-selected","true");
+
+  // switch views
+  if (t.dataset.tab === "log") {
+    stats.setAttribute("hidden", "");
+    log.removeAttribute("hidden");
+  } else {
+    log.setAttribute("hidden", "");
+    stats.removeAttribute("hidden");
+    buildStats();
+  }
+}));
+
 
     main { display: grid; gap: 14px; }
 
