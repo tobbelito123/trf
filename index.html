@@ -338,7 +338,8 @@ tabs.forEach(t => t.addEventListener("click", () => {
 
     <main>
       <!-- Log view -->
-      <section id="view-log" class="grid" role="tabpanel" aria-labelledby="tab-<!-- Armbar from guard -->
+      <section id="view-log" class="grid" role="tabpanel" aria-labelledby="tab-log">
+        <!-- Armbar from guard -->
 <button class="card submission" data-submission="armbar_from_guard" aria-label="Log Armbar from guard">
   <div class="content">
     <div class="icon" aria-hidden="true">
@@ -501,24 +502,40 @@ On iPhone, open Safari’s Share menu → “Add to Home Screen.”</p>
   <script>
     // ------- Storage & Data -------
     const KEY = "bjj-submissions-v1";
-    const SUBMISSIONS = ["armbar", "guillotine", "rear_naked_choke"];
+    const SUBMISSIONS = [
+  "armbar_from_guard",
+  "triangle_from_guard",
+  "kimura_from_guard",
+  "americana_from_side",
+  "rear_naked_choke",
+  "crosscollar_from_mount",
+  "ankle_lock"
+];
     const LABELS = {
-      armbar: "Armbar",
-      guillotine: "Guillotine",
-      rear_naked_choke: "Rear-Naked Choke",
-    };
+  armbar_from_guard: "Armbar from guard",
+  triangle_from_guard: "Triangle from guard",
+  kimura_from_guard: "Kimura from guard",
+  americana_from_side: "Americana from side",
+  rear_naked_choke: "Rear naked choke",
+  crosscollar_from_mount: "Crosscollar from mount",
+  ankle_lock: "Ankle lock"
+};
     const BELTS = ["white","blue","purple","brown","black"];
 
     function defaultData() {
-      const zero = { white:0, blue:0, purple:0, brown:0, black:0 };
-      return {
-        submissions: {
-          armbar: {...zero},
-          guillotine: {...zero},
-          rear_naked_choke: {...zero}
-        }
-      };
+  const zero = { white:0, blue:0, purple:0, brown:0, black:0 };
+  return {
+    submissions: {
+      armbar_from_guard: { ...zero },
+      triangle_from_guard: { ...zero },
+      kimura_from_guard: { ...zero },
+      americana_from_side: { ...zero },
+      rear_naked_choke: { ...zero },
+      crosscollar_from_mount: { ...zero },
+      ankle_lock: { ...zero }
     }
+  };
+}
 
     function readData() {
       try {
