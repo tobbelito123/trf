@@ -180,6 +180,28 @@ tabs.forEach(t => t.addEventListener("click", () => {
       border: 1px solid rgba(148,163,184,0.12);
       display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 12px;
     }
+      /* swipe affordance */
+.submission {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y; /* allow horizontal swipe without scrolling conflict */
+}
+
+.submission .swipe-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(239,68,68,.18), transparent 60%);
+  pointer-events: none;
+  opacity: 0; transition: opacity .15s;
+}
+
+.submission.swiping .swipe-bg { opacity: 1; }
+
+.submission .content {
+  position: relative;
+  transition: transform .15s ease, opacity .15s ease;
+  will-change: transform;
+}
+
     .icon {
       width: 60px; height: 60px; border-radius: 16px;
       display: grid; place-items: center;
@@ -311,6 +333,8 @@ tabs.forEach(t => t.addEventListener("click", () => {
       <section id="view-log" class="grid" role="tabpanel" aria-labelledby="tab-log">
         <!-- Armbar -->
         <button class="card submission" data-submission="armbar" aria-label="Log Armbar">
+          <div class="swipe-bg"></div>
+          <div class="content">
           <div class="icon" aria-hidden="true">
             <!-- Simple inline SVG icon (arm-ish) -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -323,6 +347,7 @@ tabs.forEach(t => t.addEventListener("click", () => {
             <div class="muted">Tap to log vs belt</div>
           </div>
           <div class="count" id="count-armbar">0</div>
+            </div>
         </button>
 
         <!-- Guillotine -->
@@ -339,6 +364,7 @@ tabs.forEach(t => t.addEventListener("click", () => {
             <div class="muted">Tap to log vs belt</div>
           </div>
           <div class="count" id="count-guillotine">0</div>
+          
         </button>
 
         <!-- Rear-Naked Choke -->
@@ -377,7 +403,7 @@ tabs.forEach(t => t.addEventListener("click", () => {
       <button class="belt" data-belt="brown"><span class="swatch"></span>Brown</button>
       <button class="belt" data-belt="black"><span class="swatch"></span>Black</button>
     </div>
-    <div class="hint">Tap a belt to log 1 rep for the selected submission.</div>
+    <div class="hint">Tap a belt to log 1 sub for the selected submission.</div>
   </div>
 <!-- Info Sheet -->
 <div class="sheet-backdrop" id="infoBackdrop"></div>
@@ -544,14 +570,20 @@ On iPhone, open Safari’s Share menu → “Add to Home Screen.”</p>
     }
     backdrop.addEventListener("click", closeSheet);
 
-    // Handle submission card taps
-    $$(".submission").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const sub = btn.dataset.submission;
-        openSheet(sub);
-        vibrate(8);
-      });
-    });
+// Handle submission cards (tap + swipe to delete)
+$$(".submission").forEach(btn => {
+  const sub = btn.dataset.submission;
+
+  // Normal tap
+  btn.addEventListener("click", () => {
+    openSheet(sub);
+    vibrate(8);
+  });
+
+  // Swipe-to-delete
+  attachSwipeToDelete(btn, sub);
+});
+
 
     // Handle belt selection
     $$(".belt").forEach(b => {
@@ -654,7 +686,9 @@ function renderCard(key) {
   card.dataset.submission = key;
   card.setAttribute("aria-label", "Log " + (LABELS[key] || key));
 
-  card.innerHTML = `
+card.innerHTML = `
+  <div class="swipe-bg"></div>
+  <div class="content">
     <div class="icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="12" cy="12" r="8" stroke-width="1.5"/>
@@ -666,7 +700,9 @@ function renderCard(key) {
       <div class="muted">Tap to log vs belt</div>
     </div>
     <div class="count" id="count-${key}">0</div>
-  `;
+  </div>
+`;
+
 
   // same behavior as your existing cards
   card.addEventListener("click", () => {
@@ -677,7 +713,76 @@ function renderCard(key) {
 
 
   grid.insertBefore(card, beforeFoot);
+  attachSwipeToDelete(card, key);
 }
+
+    function attachSwipeToDelete(cardEl, key) {
+  const content = cardEl.querySelector('.content');
+  const CLICK_OPEN_SHEET_DELTA = 8;     // under this, treat as tap
+  const DELETE_THRESHOLD = 96;          // px to trigger delete
+  let startX = 0, currentX = 0, dragging = false;
+
+  function onStart(e) {
+    const touch = e.touches ? e.touches[0] : e;
+    startX = currentX = touch.clientX;
+    dragging = true;
+    cardEl.classList.add('swiping');
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    currentX = touch.clientX;
+    const dx = Math.min(0, currentX - startX); // only allow swiping left
+    content.style.transform = `translateX(${dx}px)`;
+    content.style.opacity = `${1 - Math.min(Math.abs(dx) / 220, 0.25)}`;
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    const dx = currentX - startX;
+
+    if (Math.abs(dx) < CLICK_OPEN_SHEET_DELTA) {
+      // treat as normal tap
+      content.style.transform = '';
+      content.style.opacity = '';
+      cardEl.classList.remove('swiping');
+      openSheet(key);
+      vibrate(8);
+      return;
+    }
+
+    if (dx <= -DELETE_THRESHOLD) {
+      // confirm delete
+      const ok = confirm(`Delete "${LABELS[key] || key}" from your list? This won't erase past counts in backups.`);
+      if (ok) {
+        // remove from arrays + storage
+        const i = SUBMISSIONS.indexOf(key);
+        if (i >= 0) SUBMISSIONS.splice(i, 1);
+        delete DATA.submissions[key];
+        writeData(DATA);
+        // remove from DOM
+        cardEl.remove();
+        buildStats(); // refresh stats view if open
+        toast(`Deleted ${LABELS[key] || key}`);
+        vibrate(20);
+        return;
+      }
+    }
+
+    // snap back
+    content.style.transform = '';
+    content.style.opacity = '';
+    cardEl.classList.remove('swiping');
+  }
+
+  // touch events
+  cardEl.addEventListener('touchstart', onStart, {passive: true});
+  cardEl.addEventListener('touchmove', onMove, {passive: true});
+  cardEl.addEventListener('touchend', onEnd);
+  cardEl.addEventListener('touchcancel', onEnd);
+
+}
+
 
 // Ensure DATA has a zeroed belt map for a key
 function ensureZeroed(key) {
