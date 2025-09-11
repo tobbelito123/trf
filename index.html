@@ -805,33 +805,41 @@ card.innerHTML = `
   attachSwipeToDelete(card, key);
 }
 
-    function attachSwipeToDelete(cardEl, key) {
+ function attachSwipeToDelete(cardEl, key) {
   const content = cardEl.querySelector('.content');
-  const CLICK_OPEN_SHEET_DELTA = 8;     // under this, treat as tap
-  const DELETE_THRESHOLD = 96;          // px to trigger delete
-  let startX = 0, currentX = 0, dragging = false;
+  const CLICK_OPEN_SHEET_DELTA = 14;     // tap threshold (was 8)
+  const DELETE_THRESHOLD = 96;           // px to trigger delete
+
+  let startX = 0, startY = 0;
+  let currentX = 0, currentY = 0;
+  let dragging = false;
 
   function onStart(e) {
     const touch = e.touches ? e.touches[0] : e;
     startX = currentX = touch.clientX;
+    startY = currentY = touch.clientY;   // NEW: track Y too
     dragging = true;
     cardEl.classList.add('swiping');
   }
+
   function onMove(e) {
     if (!dragging) return;
     const touch = e.touches ? e.touches[0] : e;
     currentX = touch.clientX;
+    currentY = touch.clientY;            // NEW
     const dx = Math.min(0, currentX - startX); // only allow swiping left
     content.style.transform = `translateX(${dx}px)`;
     content.style.opacity = `${1 - Math.min(Math.abs(dx) / 220, 0.25)}`;
   }
+
   function onEnd() {
     if (!dragging) return;
     dragging = false;
     const dx = currentX - startX;
+    const dy = currentY - startY;        // NEW
 
-    if (Math.abs(dx) < CLICK_OPEN_SHEET_DELTA) {
-      // treat as normal tap
+    // Treat as TAP only if movement is tiny in BOTH axes
+    if (Math.abs(dx) < CLICK_OPEN_SHEET_DELTA && Math.abs(dy) < CLICK_OPEN_SHEET_DELTA) {
       content.style.transform = '';
       content.style.opacity = '';
       cardEl.classList.remove('swiping');
@@ -840,37 +848,34 @@ card.innerHTML = `
       return;
     }
 
+    // Strong left swipe → delete flow
     if (dx <= -DELETE_THRESHOLD) {
-      // confirm delete
       const ok = confirm(`Delete "${LABELS[key] || key}" from your list? This won't erase past counts in backups.`);
       if (ok) {
-        // remove from arrays + storage
         const i = SUBMISSIONS.indexOf(key);
         if (i >= 0) SUBMISSIONS.splice(i, 1);
         delete DATA.submissions[key];
         writeData(DATA);
-        // remove from DOM
         cardEl.remove();
-        buildStats(); // refresh stats view if open
+        if (!document.getElementById("view-stats").hasAttribute("hidden")) buildStats();
         toast(`Deleted ${LABELS[key] || key}`);
         vibrate(20);
         return;
       }
     }
 
-    // snap back
+    // Otherwise, snap back
     content.style.transform = '';
     content.style.opacity = '';
     cardEl.classList.remove('swiping');
   }
 
-  // touch events
-  cardEl.addEventListener('touchstart', onStart, {passive: true});
-  cardEl.addEventListener('touchmove', onMove, {passive: true});
+  cardEl.addEventListener('touchstart', onStart, { passive: true });
+  cardEl.addEventListener('touchmove', onMove,  { passive: true });
   cardEl.addEventListener('touchend', onEnd);
   cardEl.addEventListener('touchcancel', onEnd);
-
 }
+
 
 
 // Ensure DATA has a zeroed belt map for a key
