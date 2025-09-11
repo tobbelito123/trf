@@ -76,6 +76,7 @@
       padding: 16px clamp(12px, 4vw, 20px) calc(16px + env(safe-area-inset-bottom));
       gap: 14px;
     }
+    .submission { touch-action: pan-y; }
     header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 12px;
@@ -660,18 +661,40 @@ On iPhone, open Safari’s Share menu → “Add to Home Screen.”</p>
     backdrop.addEventListener("click", closeSheet);
 
 // Handle submission cards (tap + swipe to delete)
-$$(".submission").forEach(btn => {
-  const sub = btn.dataset.submission;
+// Safer tap handler: only open if no scroll/drag happened
+function attachSafeTap(btn, key) {
+  let startX = 0, startY = 0, moved = false;
 
-  // Normal tap
-  btn.addEventListener("click", () => {
-    openSheet(sub);
-    vibrate(8);
+  btn.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY;
+    moved = false;
+  }, { passive: true });
+
+  btn.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientY - startY) > 10 || Math.abs(t.clientX - startX) > 10) {
+      moved = true; // treat as scroll/drag, not a tap
+    }
+  }, { passive: true });
+
+  btn.addEventListener("touchend", () => {
+    if (!moved) { openSheet(key); vibrate(8); }
   });
 
-  // Swipe-to-delete
-  attachSwipeToDelete(btn, sub);
+  // Desktop / non-touch fallback
+  btn.addEventListener("click", (e) => {
+    // On touch devices, click will fire after touchend too; ignore because touchend already handled
+    if ("ontouchstart" in window) return;
+    openSheet(key); vibrate(8);
+  });
+}
+
+// Attach to all existing hard-coded cards
+$$(".submission").forEach(btn => {
+  attachSafeTap(btn, btn.dataset.submission);
 });
+
 
 
     // Handle belt selection
@@ -802,7 +825,7 @@ card.innerHTML = `
 
 
   grid.insertBefore(card, beforeFoot);
-  attachSwipeToDelete(card, key);
+  attachSafeTap(card, key);
 }
 
     function attachSwipeToDelete(cardEl, key) {
