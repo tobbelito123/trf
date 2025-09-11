@@ -173,12 +173,24 @@
 
 .submission .swipe-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(239,68,68,.18), transparent 60%);
+  background: #ef4444; /* Tailwind red-500 */
   pointer-events: none;
   opacity: 0; transition: opacity .15s;
 }
 
-.submission.swiping .swipe-bg { opacity: 1; }
+    .submission .swipe-bg::after {
+  content: "Delete";
+  position: absolute;
+  right: 20px; top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+
+.submission.swiping .swipe-bg { opacity: 0.9; }
 
 .submission .content {
   position: relative;
@@ -302,6 +314,7 @@
       <div class="title"><span class="dot"></span> BJJ Submissions Tracker</div>
       <div class="actions">
         <button class="ghost" id="addBtn" title="Add a submission">+ Add</button>
+        <button class="ghost" id="sortBtn" title="Toggle sorting" aria-pressed="false">Sort: Off</button>
   <button class="ghost" id="infoBtn" title="Info">ℹ️ Info</button>
 
       </div>
@@ -557,8 +570,22 @@ On iPhone, open Safari’s Share menu → “Add to Home Screen.”</p>
       return BELTS.reduce((n,b) => n + (o[b]||0), 0);
     }
     function sortedSubmissions() {
-  return [...SUBMISSIONS].sort((a, b) => totalFor(b) - totalFor(a));
+  // No auto-sort; use SUBMISSIONS as-is.
+  return [...SUBMISSIONS];
 }
+
+    function sortNow() {
+  // Create the desired order once
+  const sorted = [...SUBMISSIONS].sort((a, b) => totalFor(b) - totalFor(a));
+  // Overwrite the SUBMISSIONS array so future refreshes keep this order
+  SUBMISSIONS.length = 0;
+  SUBMISSIONS.push(...sorted);
+  // Re-render
+  refreshCards();
+  if (!document.getElementById("view-stats").hasAttribute("hidden")) buildStats();
+  toast("Sorted by total hits");
+}
+
 
    function refreshCards() {
   const grid = document.getElementById("view-log");
@@ -850,7 +877,11 @@ card.innerHTML = `
 
     // Strong left swipe → delete flow
     if (dx <= -DELETE_THRESHOLD) {
-      const ok = confirm(`Delete "${LABELS[key] || key}" from your list? This won't erase past counts in backups.`);
+      const ok = confirm(
+  `Delete "${LABELS[key] || key}"?\n\n` +
+  `This removes it from this device and from future JSON exports. ` +
+  `Any JSON backups you've already exported will not change.`
+);
       if (ok) {
         const i = SUBMISSIONS.indexOf(key);
         if (i >= 0) SUBMISSIONS.splice(i, 1);
@@ -927,6 +958,7 @@ SUBMISSIONS.forEach((key) => {
     refreshCards();
 
     document.getElementById("addBtn").addEventListener("click", addSubmissionFlow);
+    document.getElementById("sortBtn").addEventListener("click", sortNow);
 
     // ------- Info sheet -------
 const infoSheet = document.getElementById("infoSheet");
