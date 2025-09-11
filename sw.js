@@ -1,5 +1,5 @@
 // sw.js
-const CACHE = "bjj-tracker-v1";
+const CACHE = "bjj-tracker-v2";
 const ASSETS = [
   "./",
   "./index.html",
