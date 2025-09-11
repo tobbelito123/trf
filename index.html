@@ -693,6 +693,7 @@ function attachSafeTap(btn, key) {
 // Attach to all existing hard-coded cards
 $$(".submission").forEach(btn => {
   attachSafeTap(btn, btn.dataset.submission);
+  attachSwipeToDelete(btn, sub);
 });
 
 
