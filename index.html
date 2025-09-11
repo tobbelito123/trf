@@ -141,31 +141,6 @@
 }
 
 
-const tabs = $$(".tab");
-tabs.forEach(t => t.addEventListener("click", () => {
-  const log = document.getElementById("view-log");
-  const stats = document.getElementById("view-stats");
-
-  // update tab visual + aria
-  tabs.forEach(x => { 
-    x.classList.remove("active"); 
-    x.setAttribute("aria-selected","false");
-  });
-  t.classList.add("active");
-  t.setAttribute("aria-selected","true");
-
-  // switch views
-  if (t.dataset.tab === "log") {
-    stats.setAttribute("hidden", "");
-    log.removeAttribute("hidden");
-  } else {
-    log.setAttribute("hidden", "");
-    stats.removeAttribute("hidden");
-    buildStats();
-  }
-}));
-
-
     main { display: grid; gap: 14px; }
 
     /* --- Cards --- */
@@ -692,10 +667,10 @@ function attachSafeTap(btn, key) {
 
 // Attach to all existing hard-coded cards
 $$(".submission").forEach(btn => {
-  attachSafeTap(btn, btn.dataset.submission);
-  attachSwipeToDelete(btn, sub);
+  const key = btn.dataset.submission;
+  attachSafeTap(btn, key);
+  attachSwipeToDelete(btn, key);
 });
-
 
 
     // Handle belt selection
