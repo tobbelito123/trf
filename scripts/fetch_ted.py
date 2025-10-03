@@ -5,12 +5,12 @@ URL = "https://api.ted.europa.eu/v3/notices/search"
 
 body = {
     "query": "buyer-country=SE",
-    "limit": 5
+    "limit": 5,
+    "fields": ["ND", "TI", "PD", "DD", "CY", "AA"]  # ID, Title, PublicationDate, Deadline, Country, Authority
 }
 
 r = requests.post(URL, json=body, timeout=60)
 
-# Om fel, printa svaret från TED
 if not r.ok:
     print("Status:", r.status_code, r.reason)
     print("Response text:", r.text[:1000])
