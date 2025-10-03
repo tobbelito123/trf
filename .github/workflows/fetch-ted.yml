@@ -1,42 +1,20 @@
-name: Fetch TED data and update site
+#!/usr/bin/env python3
+import requests, json, sys
 
-on:
-  schedule:
-    - cron: "15 20 * * *"   # kör 20:15 UTC
-  workflow_dispatch:      # tillåt manuell körning
+url = "https://api.ted.europa.eu/v3/notices/search"
 
-jobs:
-  fetch:
-    runs-on: ubuntu-latest
+body = {
+    "q": "country:SE",
+    "pageSize": 5,
+    "sort": "publicationDate,desc"
+}
 
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+r = requests.post(url, json=body, timeout=40)
+r.raise_for_status()
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+data = r.json()
 
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pytz
+with open("data/ted.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
 
-      - name: Fetch Swedish TED notices
-        run: |
-          python scripts/fetch_ted.py --country SE --days 7 --max 300 --out data/ted.json
-
-      - name: Commit changes (if any)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ted.json
-          if git diff --cached --quiet; then
-            echo "No changes."
-          else
-            git commit -m "Update TED data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            git push
-          fi
+print("Fetched", len(data.get("results", [])), "records")
