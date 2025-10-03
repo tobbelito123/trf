@@ -4,9 +4,9 @@ import requests, json, os
 URL = "https://api.ted.europa.eu/v3/notices/search"
 
 body = {
-    "query": "buyer-country=SE",
+    "query": "nuts=SE",        # filtrera på Sverige
     "limit": 5,
-    "fields": ["ND", "TI", "PD", "DD", "CY", "AA"]  # ID, Title, PublicationDate, Deadline, Country, Authority
+    "fields": ["ND", "TI", "PD", "DD", "CY", "AA"]
 }
 
 r = requests.post(URL, json=body, timeout=60)
