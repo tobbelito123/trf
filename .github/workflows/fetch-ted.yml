@@ -1,38 +1,15 @@
-name: Fetch TED data and update site
+name: Test TED fetch
 
 on:
-  workflow_dispatch:       # kan köras manuellt
-  schedule:
-    - cron: "7 2 * * *"    # körs dagligen 02:07 UTC
+  workflow_dispatch:  # körs bara manuellt
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install deps
-        run: pip install requests
-
-      - name: Fetch Swedish TED notices
-        run: python scripts/fetch_ted.py
-
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ted.json
-          if git diff --cached --quiet; then
-            echo "No changes"
-          else
-            git commit -m "Update TED data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            git push
-          fi
+      - run: pip install requests
+      - run: python scripts/fetch_ted.py
