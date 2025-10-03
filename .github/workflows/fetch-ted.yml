@@ -2,7 +2,7 @@ name: Fetch TED data and update site
 
 on:
   schedule:
-    - cron: "7 2 * * *"   # dagligen ca 02:07 UTC
+    - cron: "15 20 * * *"   # kör 20:15 UTC
   workflow_dispatch:      # tillåt manuell körning
 
 jobs:
