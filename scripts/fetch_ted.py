@@ -3,10 +3,15 @@ import requests, json, os
 
 url = "https://api.ted.europa.eu/v3/notices/search"
 
+# En helt basic query: allt från Sverige, max 5
 body = {
-    "q": "country:SE",
+    "searchCriteria": {
+        "countries": ["SE"]
+    },
     "pageSize": 5,
-    "sort": "publicationDate,desc"
+    "pageNum": 1,
+    "sortedBy": "publicationDate",
+    "order": "desc"
 }
 
 r = requests.post(url, json=body, timeout=40)
@@ -18,4 +23,4 @@ os.makedirs("data", exist_ok=True)
 with open("data/ted.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("Fetched", len(data.get("results", [])), "records")
+print("Fetched", data.get("total", "?"), "records")
