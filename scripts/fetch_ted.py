@@ -5,7 +5,7 @@ URL = "https://api.ted.europa.eu/v3/notices/search"
 
 # Minsta giltiga query: allt från Sverige
 body = {
-    "query": "CY=SE",
+    "query": "ISO_COUNTRY=SE",
     "fields": ["ND", "TI", "PD"],
     "limit": 5
 }
