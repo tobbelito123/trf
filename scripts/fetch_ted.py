@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 import requests, json, os
 
-BASE_URL = "https://api.ted.europa.eu/v3/notices/search"
-PARAMS = {
-    "sort": "-PD"   # sortera på publication date, desc
-}
+URL = "https://api.ted.europa.eu/v3/notices/search"
 
+# Minsta möjliga: hämta 5 senaste, inga filter, bara ID + titel
 body = {
-    "query": "CY=SE",
-    "fields": ["ND","TI","PD","DD","CY","AA","OC","TD"],
-    "limit": 20
+    "fields": ["ND", "TI"],
+    "limit": 5
 }
 
-r = requests.post(BASE_URL, params=PARAMS, json=body, timeout=60)
+r = requests.post(URL, json=body, timeout=60)
 
 if not r.ok:
     print("Status:", r.status_code, r.reason)
