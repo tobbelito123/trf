@@ -3,100 +3,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TED demo – vembudar.se</title>
+  <title>vembudar.se – Upphandlingar (TED)</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-    button { padding: 10px 16px; cursor: pointer; }
-    pre { background:#f6f8fa; padding:12px; border-radius:6px; overflow:auto; }
-    .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-top:16px; }
-    .muted { color:#6b7280; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px}
+    .grid{display:grid;gap:12px}
+    .card{border:1px solid #e5e7eb;border-radius:10px;padding:12px}
+    .muted{color:#6b7280}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid #d1d5db;border-radius:999px;font-size:12px;margin-right:6px}
   </style>
 </head>
 <body>
-  <h1>TED API – enkel fetch</h1>
-  <p class="muted">Hämtar senaste publicerade upphandlingar i <strong>Sverige</strong> (över EU:s tröskel, publicerade i TED).</p>
-
-  <button id="load">Hämta 1 upphandling</button>
-
-  <div id="notice" class="card" hidden></div>
-  <h3>Rådata</h3>
-  <pre id="raw">[inget än]</pre>
+  <h1>Aktuella upphandlingar (TED, Sverige)</h1>
+  <p class="muted">Datan uppdateras automatiskt via GitHub Actions. Källa: TED.</p>
+  <div id="meta" class="muted"></div>
+  <div id="list" class="grid"></div>
 
   <script>
-  async function fetchTed() {
-    const endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+    async function load() {
+      const res = await fetch("data/ted.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("Kunde inte läsa data/ted.json");
+      const data = await res.json();
 
-    // Minimal sökkropp: land = SE, sortera på publiceringsdatum, ta 1 träff.
-    // (Om du vill: lägg till fler filter senare, t.ex. CPV/NUTS/deadline.)
-    const body = {
-      q: 'country:SE',            // Expert query-sträng – kan utökas med AND/OR
-      pageSize: 1,                // hur många notices
-      pageNum: 1,                 // sida
-      sort: 'publicationDate,desc'
-      // fields: kan utelämnas; API returnerar standardfält
-    };
+      // meta
+      document.getElementById("meta").textContent =
+        `Senast uppdaterad: ${new Date(data.fetchedAt).toLocaleString()} – Poster: ${data.count}`;
 
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+
+      (data.notices || []).slice(0, 20).forEach(n => {
+        const wrap = document.createElement("div");
+        wrap.className = "card";
+        const title = n.title || "Utan titel";
+        const buyer = n.buyer || "Okänd upphandlare";
+        const pub = n.publicationDate ? new Date(n.publicationDate).toLocaleDateString() : "—";
+        const ddl = n.deadline ? new Date(n.deadline).toLocaleDateString() : "—";
+        const value = n.estimatedValue ? `${n.estimatedValue} ${n.currency || ""}` : "—";
+        const ted = n.tedUrl ? `<a href="${n.tedUrl}" target="_blank" rel="noopener">Öppna på TED</a>` : "";
+
+        const cpv = Array.isArray(n.cpv) ? n.cpv.slice(0,3).map(c => `<span class="pill">${c.code || c}</span>`).join("") : "";
+        const nuts = Array.isArray(n.nuts) ? n.nuts.slice(0,3).map(x => `<span class="pill">${x.code || x}</span>`).join("") : "";
+
+        wrap.innerHTML = `
+          <div><strong>${title}</strong></div>
+          <div class="muted">${buyer}</div>
+          <div>Publicerad: ${pub} · Sista anbudsdag: ${ddl}</div>
+          <div>Värde: ${value}</div>
+          <div>${cpv} ${nuts}</div>
+          <div style="margin-top:6px">${ted}</div>
+        `;
+        list.appendChild(wrap);
+      });
+    }
+    load().catch(e => {
+      document.getElementById("list").textContent = "Fel: " + e.message;
     });
-
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`HTTP ${res.status} – ${t}`);
-    }
-
-    const json = await res.json();
-
-    // Visa rådata
-    document.getElementById('raw').textContent = JSON.stringify(json, null, 2);
-
-    // Försök plocka ut första notice: vissa fältnamn kan variera → defensiv kod
-    const first =
-      (json.results && json.results[0]) ||
-      (json.items && json.items[0]) ||
-      (Array.isArray(json) ? json[0] : null);
-
-    const box = document.getElementById('notice');
-    if (!first) {
-      box.innerHTML = '<strong>Ingen träff</strong>';
-      box.hidden = false;
-      return;
-    }
-
-    // Vanliga fält (kan heta lite olika beroende på version); optional chaining
-    const title = first.title?.text || first.title || first.TI || 'Utan titel';
-    const buyer = first.buyer?.name || first.buyerName || first.BN || 'Okänd upphandlare';
-    const pubDate = first.publicationDate || first.PD || first.datePublished || '';
-    const deadline = first.deadlineDate || first.deadline || first.DD || '';
-    const tedUrl =
-      first.viewUrl || first.tedUrl || first.url || first.link ||
-      (first.ND ? `https://ted.europa.eu/en/notice/-/detail/${first.ND}` : null);
-
-    box.innerHTML = `
-      <div><strong>${title}</strong></div>
-      <div class="muted">${buyer}</div>
-      <div>Publicerad: ${pubDate || '—'}</div>
-      <div>Sista anbudsdag: ${deadline || '—'}</div>
-      <div>${tedUrl ? `<a href="${tedUrl}" target="_blank" rel="noopener">Öppna på TED</a>` : ''}</div>
-    `;
-    box.hidden = false;
-  }
-
-  document.getElementById('load').addEventListener('click', async () => {
-    const btn = document.getElementById('load');
-    btn.disabled = true;
-    btn.textContent = 'Hämtar...';
-    try {
-      await fetchTed();
-    } catch (e) {
-      document.getElementById('raw').textContent = 'Fel: ' + e.message;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Hämta 1 upphandling';
-    }
-  });
   </script>
 </body>
 </html>
