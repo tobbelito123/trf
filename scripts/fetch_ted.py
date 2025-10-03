@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 import requests, json, os
 
-URL = "https://api.ted.europa.eu/v3/notices/search"
+BASE_URL = "https://api.ted.europa.eu/v3/notices/search"
+PARAMS = {
+    "sort": "-PD"   # sortera på publication date, desc
+}
 
-# Expert query: CY = country (SE = Sverige)
 body = {
     "query": "CY=SE",
     "fields": ["ND","TI","PD","DD","CY","AA","OC","TD"],
-    "limit": 20,
-    "sort": ["-PD"]  # senaste först (PD = publicationDate)
+    "limit": 20
 }
 
-r = requests.post(URL, json=body, timeout=60)
+r = requests.post(BASE_URL, params=PARAMS, json=body, timeout=60)
+
 if not r.ok:
     print("Status:", r.status_code, r.reason)
     print("Response text:", r.text[:1500])
     r.raise_for_status()
 
 data = r.json()
+
 os.makedirs("data", exist_ok=True)
 with open("data/ted.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
