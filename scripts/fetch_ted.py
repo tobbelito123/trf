@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 import requests, json, os
 
-url = "https://api.ted.europa.eu/v3/notices/search"
+URL = "https://api.ted.europa.eu/v3/notices/search"
 
-# En helt basic query: allt från Sverige, max 5
 body = {
-    "searchCriteria": {
-        "countries": ["SE"]
-    },
-    "pageSize": 5,
-    "pageNum": 1,
-    "sortedBy": "publicationDate",
-    "order": "desc"
+    "query": "buyer-country=SE",     # Sverige
+    "limit": 20,                     # antal poster
+    "scope": "ACTIVE",               # aktiva upphandlingar
+    "paginationMode": "ITERATION",
+    "checkQuerySyntax": False
 }
 
-r = requests.post(url, json=body, timeout=40)
-r.raise_for_status()
+r = requests.post(URL, json=body, timeout=60)
+try:
+    r.raise_for_status()
+except Exception:
+    print("Status:", r.status_code, r.reason)
+    print("Body:", r.text[:1000])
+    raise
 
 data = r.json()
-
 os.makedirs("data", exist_ok=True)
 with open("data/ted.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print("Fetched", data.get("total", "?"), "records")
+print("Fetched total:", data.get("total"), "returned:", len(data.get("results", [])))
