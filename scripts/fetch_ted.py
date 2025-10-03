@@ -3,9 +3,10 @@ import requests, json, os
 
 URL = "https://api.ted.europa.eu/v3/notices/search"
 
-# Minsta möjliga: hämta 5 senaste, inga filter, bara ID + titel
+# Minsta giltiga query: allt från Sverige
 body = {
-    "fields": ["ND", "TI"],
+    "query": "CY=SE",
+    "fields": ["ND", "TI", "PD"],
     "limit": 5
 }
 
