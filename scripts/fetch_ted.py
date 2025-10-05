@@ -7,7 +7,7 @@ QUERY = 'buyer-country="SWE" AND PD>=today(-365)'
 
 BODY = {
     "query": QUERY,
-    "fields": ["ND", "TI", "PD", "OJ", "RI"],  # ta gärna med OJ/RI för länkar
+    "fields": ["ND", "TI", "PD"],  # ta gärna med OJ/RI för länkar
     "limit": 250,                 # ↑ var 10
     "page": 1,
     "scope": "ALL",               # byt ev. till "ACTIVE" för färre resultat
