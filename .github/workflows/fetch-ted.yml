@@ -36,13 +36,12 @@ jobs:
           mkdir -p data
           git add -A data/
 
-          # If data/ is ignored, force add the JSON
           if git check-ignore -q data/ted.json; then
             git add -f data/ted.json
           fi
 
           if ! git diff --cached --quiet; then
-            git commit -m "Update TED dump ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+            git commit -m "Update TED data ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
             git push
           else
             echo "No changes to commit."
