@@ -194,43 +194,37 @@
     }
 
     // ---------------- init ----------------
-async function init(){
-    try {
-      // Viktigt: relativ sökväg funkar både på apex-domän och projektpages
-      const res = await fetch('data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+async function init() {
+  try {
+    // relative path is fine on root/apex or project pages
+    const res = await fetch('data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
-      // Läs som text först – så vi kan upptäcka LFS/HTML/BOM
-      const raw = await res.text();
-      const head = raw.slice(0, 180);
-      console.log('data/ted.json head:', head);
+    const data = await res.json();   // <-- direct JSON parse (no extra checks)
+    updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : "";
 
-      // 1) Git LFS-pekare?
-      if (/^version https:\/\/git-lfs.github.com\/spec\/v1/m.test(raw)) {
-        throw new Error('Filen är en Git LFS-pekare. Antingen ta bort LFS-tracking eller pusha LFS-objekten.');
-      }
-      // 2) Fick vi HTML (404 eller annat)?
-      if (/^\s*</.test(raw)) {
-        throw new Error('Fick HTML i stället för JSON (Pages inte färdigdeployad eller sökvägen fel).');
-      }
-
-      // 3) Städa bort ev. UTF-8 BOM och whitespace före JSON
-      const cleaned = raw.replace(/^\uFEFF/, '').trim();
-      if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-        throw new Error('Svaret börjar inte med { eller [. Är filen verkligen JSON?');
-      }
-
-      const data = JSON.parse(cleaned);
-
-      // Förväntad struktur: { generated_at, query, count, notices: [...] }
-      updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : "";
-      noticesRaw = Array.isArray(data.notices) ? data.notices : [];
-      render();
-    } catch (e) {
-      countEl.textContent = "Fel: Kunde inte läsa/parsa data/ted.json (se konsolen)";
-      console.error(e);
-    }
+    // noticesRaw is what render() expects
+    noticesRaw = Array.isArray(data.notices) ? data.notices : [];
+    render();
+  } catch (e) {
+    countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+    console.error("data/ted.json fel:", e);
   }
+}
+
+onlySvEl.addEventListener('change', render);
+qEl.addEventListener('input', render);
+chips.forEach(ch => {
+  ch.addEventListener('click', () => {
+    chips.forEach(x => x.setAttribute('aria-pressed', 'false'));
+    ch.setAttribute('aria-pressed', 'true');
+    activeCity = ch.dataset.city || 'ALLA';
+    render();
+  });
+});
+
+init();
+
 
 
     // events
