@@ -3,38 +3,228 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aktuella upphandlingar (TED, Sverige)</title>
-  <link rel="stylesheet" href="assets/styles.css">
+  <title>Aktuella upphandlingar – Sverige (TED)</title>
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root{
+      --fg:#0b1320; --bg:#fff; --muted:#657189; --card:#f6f7fb; --ring:#dfe7ff; --link:#1a73e8;
+      --chip:#e8eefc; --chip-fg:#194fb0; --accent:#111827;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{ --fg:#e8ecf7; --bg:#0b0f17; --muted:#9aa4b5; --card:#121828; --ring:#1e2b47; --link:#76a7ff; --chip:#15213a; --chip-fg:#a8c4ff; --accent:#eef2ff; }
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif; color:var(--fg); background:var(--bg); }
+    header,main,footer{ max-width:980px; margin:0 auto; padding:0 16px }
+    header{ padding:32px 16px 8px }
+    h1{ font-size:clamp(28px,4.4vw,44px); line-height:1.15; margin:0 0 6px }
+    p.lead{ margin:.25rem 0 0; color:var(--muted) }
+
+    .toolbar{ display:flex; flex-wrap:wrap; gap:.6rem .8rem; align-items:center; margin:18px 0 12px; color:var(--muted) }
+    .chips{ display:flex; gap:.5rem; flex-wrap:wrap }
+    .chip{
+      border:1px solid var(--ring); background:var(--card); color:var(--fg);
+      padding:.35rem .7rem; border-radius:999px; cursor:pointer; user-select:none;
+    }
+    .chip[aria-pressed="true"]{ background:var(--chip); color:var(--chip-fg); border-color:transparent; }
+
+    .controls{ display:flex; flex-wrap:wrap; gap:.8rem 1rem; align-items:center }
+    .controls label{ display:flex; gap:.45rem; align-items:center; color:var(--muted) }
+    .search{ width:100%; margin-top:.4rem }
+    .search input{
+      width:100%; padding:.75rem .9rem; border-radius:10px; border:1px solid var(--ring); background:var(--card); color:var(--fg);
+      outline:none;
+    }
+
+    .list{ display:grid; gap:.9rem; margin:14px 0 36px }
+    .card{
+      background:var(--card); border:1px solid var(--ring); border-radius:14px; padding:14px;
+    }
+    .title{ margin:0 0 .2rem; font-weight:650; font-size:1.05rem }
+    .badge{ font-size:.72rem; background:var(--chip); color:var(--chip-fg); padding:.15rem .45rem; border-radius:6px; margin-left:.4rem }
+    .meta{ display:flex; gap:1rem .9rem; flex-wrap:wrap; color:var(--muted); font-size:.93rem; margin:.25rem 0 .15rem }
+    .links a{ color:var(--link); text-decoration:none; margin-right:1rem }
+    .amt{ font-weight:600; color:var(--accent) }
+
+    footer{ color:var(--muted); font-size:.95rem; padding:22px 16px 40px; border-top:1px dotted var(--ring) }
+    a{ color:var(--link) }
+    .muted{ color:var(--muted) }
+  </style>
 </head>
 <body>
-  <header class="wrap">
+  <header>
     <h1>Aktuella upphandlingar – Sverige (TED)</h1>
-    <p class="sub">Datan uppdateras dagligen från EU:s TED API. Svensk titel visas när den finns, annars närmaste språk.</p>
-
-    <div class="toolbar">
-      <span id="count" class="muted">Laddar…</span>
-      <span id="updated" class="muted"></span>
-    </div>
-
-    <div class="filters">
-      <span class="muted">Snabbfilter:</span>
-      <button class="pill is-active" data-city="ALL">Alla</button>
-      <button class="pill" data-city="Göteborg">Göteborg</button>
-      <button class="pill" data-city="Stockholm">Stockholm</button>
-      <button class="pill" data-city="Malmö">Malmö</button>
-      <label class="onlysv"><input type="checkbox" id="onlySv"> Endast svensk titel</label>
-      <input id="q" type="search" placeholder="Fritext i titel…" aria-label="Sök i titel">
-    </div>
+    <p class="lead">Datan uppdateras dagligen från EU:s TED API. Svensk titel visas när den finns,
+      annars visas närmast tillgängliga språk.</p>
   </header>
 
-  <main class="wrap">
-    <div id="list" class="list" aria-live="polite"></div>
+  <main>
+    <div class="toolbar">
+      <span id="count" class="muted">Laddar…</span>
+      <span id="updated" class="muted" style="margin-left:.6rem"></span>
+    </div>
+
+    <div class="toolbar">
+      <div class="chips" role="tablist" aria-label="Snabbfilter stad">
+        <button class="chip" id="chip-all" aria-pressed="true" data-city="ALLA">Alla</button>
+        <button class="chip" id="chip-gbg" aria-pressed="false" data-city="Göteborg">Göteborg</button>
+        <button class="chip" id="chip-sth" aria-pressed="false" data-city="Stockholm">Stockholm</button>
+        <button class="chip" id="chip-mlm" aria-pressed="false" data-city="Malmö">Malmö</button>
+      </div>
+
+      <div class="controls">
+        <label><input type="checkbox" id="onlySv"> Endast svensk titel</label>
+      </div>
+      <div class="search">
+        <input id="q" type="search" placeholder="Fritext i titel…">
+      </div>
+    </div>
+
+    <section id="list" class="list" aria-live="polite"></section>
   </main>
 
-  <footer class="wrap foot">
+  <footer>
     Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>.
   </footer>
 
-  <script src="assets/app.js"></script>
+  <script>
+    const listEl   = document.getElementById('list');
+    const countEl  = document.getElementById('count');
+    const updEl    = document.getElementById('updated');
+    const onlySvEl = document.getElementById('onlySv');
+    const qEl      = document.getElementById('q');
+    const chips    = [...document.querySelectorAll('.chip')];
+
+    // state
+    let noticesRaw = [];
+    let activeCity = 'ALLA';
+
+    // ---- utils ------------------------------------------------------------
+    function escapeHtml(s){return (s||"").toString().replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));}
+    function fmtDate(iso){
+      if(!iso) return "okänt datum";
+      try{ const d=new Date(iso); return d.toLocaleDateString('sv-SE',{year:'numeric',month:'short',day:'2-digit'}); }
+      catch{ return iso; }
+    }
+    function pickTitle(TI){
+      if(!TI || typeof TI!=='object') return null;
+      // Vanliga nycklar: 'swe' (ibland 'sv')
+      if(TI.swe) return TI.swe;
+      if(TI.sv)  return TI.sv;
+      // Fallback: engelska om finns
+      const engKey = ['eng','en','enGB','en-US','en-GB'].find(k=>TI[k]);
+      if(engKey) return TI[engKey];
+      // else: första valfri
+      const first = Object.values(TI)[0];
+      return first || null;
+    }
+    function hasSwedish(TI){ return !!(TI && (TI.swe || TI.sv)); }
+
+    // Returnerar {amount, cur, label} utifrån Ted-fält vi bad om
+    function pickAmount(n){
+      // Följ ordning: faktiskt utfall → total → uppskattad
+      if(n['result-value-notice']) return { amount: n['result-value-notice'], cur: n['result-value-cur-notice'], label:'Resultat' };
+      if(n['total-value'])        return { amount: n['total-value'],        cur: n['total-value-cur'],         label:'Totalt'   };
+      if(n['estimated-value-glo'])return { amount: n['estimated-value-glo'],cur: n['estimated-value-cur-glo'], label:'Beräknat' };
+      return null;
+    }
+    function formatMoney(a, cur){
+      if(a==null) return '';
+      const num = Number(a);
+      if(!isFinite(num)) return `${a} ${cur||''}`.trim();
+      if((cur||'').toUpperCase()==='SEK'){
+        try{ return new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}).format(num); }
+        catch{ return num.toLocaleString('sv-SE')+' kr'; }
+      }
+      return `${num.toLocaleString('sv-SE',{maximumFractionDigits:0})} ${cur||''}`.trim();
+    }
+
+    // Gör om råobjekt → renderbart objekt
+    function mapNotice(n){
+      const title = pickTitle(n.TI)||'(utan titel)';
+      const has_sv = hasSwedish(n.TI);
+      const nd = n.ND || '';
+      const pd = n.PD || '';
+      const city = n['buyer-city'] || '';
+      // Länkar – leta PDF/HTML
+      let htmlUrl='', pdfUrl='';
+      const links = Array.isArray(n.links) ? n.links : [];
+      for(const L of links){
+        const href = (L && (L.href || L.url || L.link)) || '';
+        const type = (L && (L.type || L.format || '')).toString().toLowerCase();
+        if(!href) continue;
+        if(!pdfUrl && (type.includes('pdf') || /\.pdf(\?|$)/i.test(href))) pdfUrl = href;
+        if(!htmlUrl && (type.includes('html') || /\.html?(\?|$)/i.test(href))) htmlUrl = href;
+      }
+      const amt = pickAmount(n);
+      const amountText = amt ? `${amt.label}: <span class="amt">${formatMoney(amt.amount, amt.cur)}</span>` : '';
+
+      return { title, has_sv, nd, pd, city, htmlUrl, pdfUrl, amountText };
+    }
+
+    function render(){
+      const q = (qEl.value||'').trim().toLowerCase();
+      const onlySv = !!onlySvEl.checked;
+
+      let items = noticesRaw
+        .map(mapNotice)
+        .filter(x => !onlySv || x.has_sv)
+        .filter(x => activeCity==='ALLA' || (x.city||'').toLowerCase()===activeCity.toLowerCase())
+        .filter(x => !q || x.title.toLowerCase().includes(q));
+
+      countEl.textContent = `${items.length} upphandlingar${activeCity!=='ALLA' ? ' • '+activeCity : ''}${onlySv?' • svensk titel':''}${q?' • sök: “'+q+'”':''}`;
+
+      listEl.innerHTML = '';
+      for(const n of items){
+        const el = document.createElement('article');
+        el.className = 'card';
+        el.innerHTML = `
+          <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
+          <div class="meta">
+            <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
+            ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
+            ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
+            ${n.amountText ? `<span>${n.amountText}</span>` : ''}
+          </div>
+          <div class="links" style="margin-top:.3rem">
+            ${n.htmlUrl ? `<a href="${n.htmlUrl}" target="_blank" rel="noopener">🌐 HTML</a>` : ''}
+            ${n.pdfUrl  ? `<a href="${n.pdfUrl}"  target="_blank" rel="noopener">📄 PDF</a>`  : ''}
+          </div>
+        `;
+        listEl.appendChild(el);
+      }
+    }
+
+    // ---- init -------------------------------------------------------------
+    async function init(){
+      try{
+        const r = await fetch('data/ted.json', { cache:'no-cache' });
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        // ✔ dina nycklar heter generated_at / notices
+        updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : '';
+        noticesRaw = Array.isArray(data.notices) ? data.notices : [];
+        render();
+      }catch(err){
+        countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+        console.error(err);
+      }
+    }
+
+    // events
+    onlySvEl.addEventListener('change', render);
+    qEl.addEventListener('input', () => { render(); });
+
+    chips.forEach(ch => {
+      ch.addEventListener('click', () => {
+        chips.forEach(x => x.setAttribute('aria-pressed', 'false'));
+        ch.setAttribute('aria-pressed', 'true');
+        activeCity = ch.dataset.city || 'ALLA';
+        render();
+      });
+    });
+
+    init();
+  </script>
 </body>
 </html>
