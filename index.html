@@ -4,122 +4,28 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Aktuella upphandlingar (TED, Sverige)</title>
-  <style>
-    :root { --fg:#0b1320; --muted:#636a76; --bg:#fff; --card:#f7f8fb; --link:#1a73e8; }
-    * { box-sizing: border-box; }
-    body { margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:var(--fg); background:var(--bg); }
-    header { padding:2.5rem 1rem 1rem; max-width:900px; margin:0 auto; }
-    h1 { font-size: clamp(28px, 3.6vw, 44px); margin:0 0 .3rem; }
-    p.sub { color:var(--muted); margin:.25rem 0 0; }
-    main { max-width:900px; margin:1rem auto 3rem; padding:0 1rem; }
-    .toolbar { display:flex; gap:.75rem; align-items:center; margin:.5rem 0 1rem; flex-wrap:wrap; color:var(--muted); }
-    .list { display:grid; gap:.75rem; }
-    .card { background:var(--card); border-radius:12px; padding:1rem; }
-    .title { font-weight:600; margin:0 0 .25rem; }
-    .meta { font-size:.9rem; color:var(--muted); display:flex; gap:1rem; flex-wrap:wrap; }
-    .links a { color:var(--link); text-decoration:none; margin-right:1rem; }
-    .badge { font-size:.75rem; background:#e8eefc; color:#194fb0; padding:.2rem .5rem; border-radius:6px; margin-left:.25rem; }
-    .muted { color:var(--muted); }
-    footer { max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--muted); font-size:.9rem; }
-  </style>
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-  <header>
+  <header class="wrap">
     <h1>Aktuella upphandlingar – Sverige (TED)</h1>
-    <p class="sub">Datan hämtas dagligen från EU:s TED API. Titlar visas på svenska när de finns,
-      annars visas närmast tillgängliga språk.</p>
-  </header>
-
-  <main>
+    <p class="sub">Datan uppdateras dagligen från EU:s TED API. Svensk titel visas när den finns, annars närmaste språk.</p>
     <div class="toolbar">
       <span id="count" class="muted">Laddar…</span>
       <span id="updated" class="muted"></span>
       <label><input type="checkbox" id="onlySv"> Visa endast poster med svensk titel</label>
+      <input id="q" type="search" placeholder="Fritext i titel…" aria-label="Sök i titel">
     </div>
+  </header>
+
+  <main class="wrap">
     <div id="list" class="list" aria-live="polite"></div>
   </main>
 
-  <footer>
+  <footer class="wrap foot">
     Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>.
   </footer>
 
- <script>
-  const listEl = document.getElementById('list');
-  const countEl = document.getElementById('count');
-  const updEl = document.getElementById('updated');
-  const onlySvEl = document.getElementById('onlySv');
-
-  let items = [];
-
-  function fmtDate(pd) {
-    if (!pd) return "okänt datum";
-    // PD often looks like "2024-10-07+02:00" (no 'T'). Show the date part.
-    if (/^\d{4}-\d{2}-\d{2}/.test(pd)) return pd.slice(0, 10);
-    try { return new Date(pd).toLocaleDateString('sv-SE', {year:'numeric', month:'short', day:'2-digit'}); }
-    catch { return pd; }
-  }
-
-  function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
-
-  function render() {
-    const filtered = onlySvEl.checked ? items.filter(x => x.has_sv) : items;
-    countEl.textContent = `${filtered.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
-    listEl.innerHTML = "";
-    filtered.forEach(n => {
-      const card = document.createElement('article');
-      card.className = 'card';
-      card.innerHTML = `
-        <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
-        <div class="meta">
-          <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
-          ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ""}
-        </div>
-        <div class="links" style="margin-top:.5rem">
-          ${n.html_url ? `<a href="${n.html_url}" target="_blank" rel="noopener">🌐 HTML</a>` : ""}
-          ${n.pdf_url ? `<a href="${n.pdf_url}" target="_blank" rel="noopener">📄 PDF</a>` : ""}
-        </div>
-      `;
-      listEl.appendChild(card);
-    });
-  }
-
-  async function init() {
-    try {
-      const r = await fetch('data/ted.json', { cache: 'no-cache' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-
-      // header text
-      updEl.textContent = (data.generated_at || data.generated_at_utc)
-        ? `• Uppdaterad: ${data.generated_at || data.generated_at_utc}`
-        : "";
-
-      // notices -> items your UI understands
-      const notices = data.notices || data.items || [];
-      items = notices.map(n => {
-        const TI = n.TI || n.ti || {};
-        const titleSv = TI.swe || TI.sv;
-        const anyTitle = titleSv || TI.eng || TI.en || Object.values(TI)[0] || "(saknar titel)";
-        return {
-          title: anyTitle,
-          has_sv: !!titleSv,
-          pd: n.PD || n.pd || "",
-          nd: n.ND || n.nd || "",
-          // These will remain empty until you include RI/OJ in the API fields:
-          html_url: n.html_url || null,
-          pdf_url: n.pdf_url || null
-        };
-      });
-
-      render();
-    } catch (e) {
-      countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
-      console.error(e);
-    }
-  }
-
-  onlySvEl.addEventListener('change', render);
-  init();
-</script>
+  <script src="assets/app.js"></script>
 </body>
 </html>
