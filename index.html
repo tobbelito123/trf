@@ -3,61 +3,102 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>vembudar.se – Upphandlingar (TED)</title>
+  <title>Aktuella upphandlingar (TED, Sverige)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px}
-    .grid{display:grid;gap:12px}
-    .card{border:1px solid #e5e7eb;border-radius:10px;padding:12px}
-    .muted{color:#6b7280}
-    .pill{display:inline-block;padding:2px 8px;border:1px solid #d1d5db;border-radius:999px;font-size:12px;margin-right:6px}
+    :root { --fg:#0b1320; --muted:#636a76; --bg:#fff; --card:#f7f8fb; --link:#1a73e8; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:var(--fg); background:var(--bg); }
+    header { padding:2.5rem 1rem 1rem; max-width:900px; margin:0 auto; }
+    h1 { font-size: clamp(28px, 3.6vw, 44px); margin:0 0 .3rem; }
+    p.sub { color:var(--muted); margin:.25rem 0 0; }
+    main { max-width:900px; margin:1rem auto 3rem; padding:0 1rem; }
+    .toolbar { display:flex; gap:.75rem; align-items:center; margin:.5rem 0 1rem; flex-wrap:wrap; color:var(--muted); }
+    .list { display:grid; gap:.75rem; }
+    .card { background:var(--card); border-radius:12px; padding:1rem; }
+    .title { font-weight:600; margin:0 0 .25rem; }
+    .meta { font-size:.9rem; color:var(--muted); display:flex; gap:1rem; flex-wrap:wrap; }
+    .links a { color:var(--link); text-decoration:none; margin-right:1rem; }
+    .badge { font-size:.75rem; background:#e8eefc; color:#194fb0; padding:.2rem .5rem; border-radius:6px; margin-left:.25rem; }
+    .muted { color:var(--muted); }
+    footer { max-width:900px; margin:2rem auto; padding:0 1rem; color:var(--muted); font-size:.9rem; }
   </style>
 </head>
 <body>
-  <h1>Aktuella upphandlingar (TED, Sverige)</h1>
-  <p class="muted">Datan uppdateras automatiskt via GitHub Actions. Källa: TED.</p>
-  <div id="meta" class="muted"></div>
-  <div id="list" class="grid"></div>
+  <header>
+    <h1>Aktuella upphandlingar – Sverige (TED)</h1>
+    <p class="sub">Datan hämtas dagligen från EU:s TED API. Titlar visas på svenska när de finns,
+      annars visas närmast tillgängliga språk.</p>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <span id="count" class="muted">Laddar…</span>
+      <span id="updated" class="muted"></span>
+      <label><input type="checkbox" id="onlySv"> Visa endast poster med svensk titel</label>
+    </div>
+    <div id="list" class="list" aria-live="polite"></div>
+  </main>
+
+  <footer>
+    Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>.
+  </footer>
 
   <script>
-    async function load() {
-      const res = await fetch("data/ted.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("Kunde inte läsa data/ted.json");
-      const data = await res.json();
+    const listEl = document.getElementById('list');
+    const countEl = document.getElementById('count');
+    const updEl = document.getElementById('updated');
+    const onlySvEl = document.getElementById('onlySv');
 
-      // meta
-      document.getElementById("meta").textContent =
-        `Senast uppdaterad: ${new Date(data.fetchedAt).toLocaleString()} – Poster: ${data.count}`;
+    let items = [];
 
-      const list = document.getElementById("list");
-      list.innerHTML = "";
+    function fmtDate(iso) {
+      if (!iso) return "okänt datum";
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('sv-SE', { year:'numeric', month:'short', day:'2-digit' });
+      } catch { return iso; }
+    }
 
-      (data.notices || []).slice(0, 20).forEach(n => {
-        const wrap = document.createElement("div");
-        wrap.className = "card";
-        const title = n.title || "Utan titel";
-        const buyer = n.buyer || "Okänd upphandlare";
-        const pub = n.publicationDate ? new Date(n.publicationDate).toLocaleDateString() : "—";
-        const ddl = n.deadline ? new Date(n.deadline).toLocaleDateString() : "—";
-        const value = n.estimatedValue ? `${n.estimatedValue} ${n.currency || ""}` : "—";
-        const ted = n.tedUrl ? `<a href="${n.tedUrl}" target="_blank" rel="noopener">Öppna på TED</a>` : "";
-
-        const cpv = Array.isArray(n.cpv) ? n.cpv.slice(0,3).map(c => `<span class="pill">${c.code || c}</span>`).join("") : "";
-        const nuts = Array.isArray(n.nuts) ? n.nuts.slice(0,3).map(x => `<span class="pill">${x.code || x}</span>`).join("") : "";
-
-        wrap.innerHTML = `
-          <div><strong>${title}</strong></div>
-          <div class="muted">${buyer}</div>
-          <div>Publicerad: ${pub} · Sista anbudsdag: ${ddl}</div>
-          <div>Värde: ${value}</div>
-          <div>${cpv} ${nuts}</div>
-          <div style="margin-top:6px">${ted}</div>
+    function render() {
+      const filtered = onlySvEl.checked ? items.filter(x => x.has_sv) : items;
+      countEl.textContent = `${filtered.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
+      listEl.innerHTML = "";
+      filtered.forEach(n => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
+          <div class="meta">
+            <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
+            ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ""}
+          </div>
+          <div class="links" style="margin-top:.5rem">
+            ${n.html_url ? `<a href="${n.html_url}" target="_blank" rel="noopener">🌐 HTML</a>` : ""}
+            ${n.pdf_url ? `<a href="${n.pdf_url}" target="_blank" rel="noopener">📄 PDF</a>` : ""}
+          </div>
         `;
-        list.appendChild(wrap);
+        listEl.appendChild(card);
       });
     }
-    load().catch(e => {
-      document.getElementById("list").textContent = "Fel: " + e.message;
-    });
+
+    function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+    async function init() {
+      try {
+        const r = await fetch('data/ted.json', { cache: 'no-cache' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        updEl.textContent = data.generated_at_utc ? `• Uppdaterad: ${data.generated_at_utc}` : "";
+        items = data.items || [];
+        render();
+      } catch (e) {
+        countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+        console.error(e);
+      }
+    }
+
+    onlySvEl.addEventListener('change', render);
+    init();
   </script>
 </body>
 </html>
