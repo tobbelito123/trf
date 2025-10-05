@@ -4,13 +4,19 @@ import requests
 
 URL = "https://api.ted.europa.eu/v3/notices/search"
 
-# Justera vid behov (t.ex. städer i stället för land)
+# Byt gärna till stadssökning om du vill:
 QUERY = '(buyer-city="Göteborg" OR buyer-city="Stockholm" OR buyer-city="Malmö") AND PD>=today(-90)'
+# QUERY = 'buyer-country="SWE" AND PD>=today(-90)'
 
 BODY = {
     "query": QUERY,
-    "fields": ["ND", "TI", "PD", "links"],  # 'links' stöds och ger ev. URL:er
-    "limit": 250,          # max 250/sida
+    "fields": [
+        "ND","TI","PD","links","buyer-city",
+        "total-value","total-value-cur",
+        "result-value-notice","result-value-cur-notice",
+        "estimated-value-glo","estimated-value-cur-glo"
+    ],
+    "limit": 250,
     "page": 1,
     "scope": "ALL",
     "checkQuerySyntax": False,
