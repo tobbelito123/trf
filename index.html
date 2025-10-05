@@ -99,7 +99,7 @@
     let noticesRaw = [];
     let activeCity = 'ALLA';
 
-    // ---- utils ------------------------------------------------------------
+    // ---------------- utils ----------------
     function escapeHtml(s){return (s||"").toString().replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));}
     function fmtDate(iso){
       if(!iso) return "okänt datum";
@@ -108,21 +108,17 @@
     }
     function pickTitle(TI){
       if(!TI || typeof TI!=='object') return null;
-      // Vanliga nycklar: 'swe' (ibland 'sv')
       if(TI.swe) return TI.swe;
       if(TI.sv)  return TI.sv;
-      // Fallback: engelska om finns
       const engKey = ['eng','en','enGB','en-US','en-GB'].find(k=>TI[k]);
       if(engKey) return TI[engKey];
-      // else: första valfri
       const first = Object.values(TI)[0];
       return first || null;
     }
     function hasSwedish(TI){ return !!(TI && (TI.swe || TI.sv)); }
 
-    // Returnerar {amount, cur, label} utifrån Ted-fält vi bad om
+    // belopp: välj resultat → total → uppskattad
     function pickAmount(n){
-      // Följ ordning: faktiskt utfall → total → uppskattad
       if(n['result-value-notice']) return { amount: n['result-value-notice'], cur: n['result-value-cur-notice'], label:'Resultat' };
       if(n['total-value'])        return { amount: n['total-value'],        cur: n['total-value-cur'],         label:'Totalt'   };
       if(n['estimated-value-glo'])return { amount: n['estimated-value-glo'],cur: n['estimated-value-cur-glo'], label:'Beräknat' };
@@ -139,23 +135,25 @@
       return `${num.toLocaleString('sv-SE',{maximumFractionDigits:0})} ${cur||''}`.trim();
     }
 
-    // Gör om råobjekt → renderbart objekt
+    // rå → renderbart
     function mapNotice(n){
       const title = pickTitle(n.TI)||'(utan titel)';
       const has_sv = hasSwedish(n.TI);
       const nd = n.ND || '';
       const pd = n.PD || '';
       const city = n['buyer-city'] || '';
-      // Länkar – leta PDF/HTML
+
+      // länkar
       let htmlUrl='', pdfUrl='';
       const links = Array.isArray(n.links) ? n.links : [];
       for(const L of links){
         const href = (L && (L.href || L.url || L.link)) || '';
         const type = (L && (L.type || L.format || '')).toString().toLowerCase();
         if(!href) continue;
-        if(!pdfUrl && (type.includes('pdf') || /\.pdf(\?|$)/i.test(href))) pdfUrl = href;
-        if(!htmlUrl && (type.includes('html') || /\.html?(\?|$)/i.test(href))) htmlUrl = href;
+        if(!pdfUrl && (type.includes('pdf') || /\.pdf(\?|$)/i.test(href)))  pdfUrl  = href;
+        if(!htmlUrl && (type.includes('html')|| /\.html?(\?|$)/i.test(href))) htmlUrl = href;
       }
+
       const amt = pickAmount(n);
       const amountText = amt ? `${amt.label}: <span class="amt">${formatMoney(amt.amount, amt.cur)}</span>` : '';
 
@@ -195,26 +193,25 @@
       }
     }
 
-    // ---- init -------------------------------------------------------------
+    // ---------------- init ----------------
     async function init(){
-     try {
-  const r = await fetch('/data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
-  if (!r.ok) throw new Error(`HTTP ${r.status} (${r.statusText})`);
-  const data = await r.json();
+      try {
+        const r = await fetch('/data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status} (${r.statusText})`);
+        const data = await r.json();
 
-  updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : "";
-  items = (data.notices || []).map(n => normalizeNotice(n)); // se normalize nedan
-  render();
-} catch (e) {
-  countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
-  console.error("Kunde inte läsa data/ted.json:", e);
-}
+        updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : "";
+        noticesRaw = data.notices || [];
+        render();
+      } catch (e) {
+        countEl.textContent = "Fel: Kunde inte läsa/pars:a data/ted.json (se konsolen)";
+        console.error("Kunde inte läsa/pars:a data/ted.json:", e);
+      }
     }
 
     // events
     onlySvEl.addEventListener('change', render);
-    qEl.addEventListener('input', () => { render(); });
-
+    qEl.addEventListener('input', render);
     chips.forEach(ch => {
       ch.addEventListener('click', () => {
         chips.forEach(x => x.setAttribute('aria-pressed', 'false'));
