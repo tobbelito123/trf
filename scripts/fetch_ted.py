@@ -3,7 +3,7 @@ import json, os, time
 import requests
 
 URL = "https://api.ted.europa.eu/v3/notices/search"
-QUERY = 'buyer-country="SWE" AND PD>=today(-365)'
+QUERY = 'buyer-country="SWE" AND PD>=today(-150)'
 
 BODY = {
     "query": QUERY,
