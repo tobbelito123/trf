@@ -10,10 +10,19 @@
   <header class="wrap">
     <h1>Aktuella upphandlingar – Sverige (TED)</h1>
     <p class="sub">Datan uppdateras dagligen från EU:s TED API. Svensk titel visas när den finns, annars närmaste språk.</p>
+
     <div class="toolbar">
       <span id="count" class="muted">Laddar…</span>
       <span id="updated" class="muted"></span>
-      <label><input type="checkbox" id="onlySv"> Visa endast poster med svensk titel</label>
+    </div>
+
+    <div class="filters">
+      <span class="muted">Snabbfilter:</span>
+      <button class="pill is-active" data-city="ALL">Alla</button>
+      <button class="pill" data-city="Göteborg">Göteborg</button>
+      <button class="pill" data-city="Stockholm">Stockholm</button>
+      <button class="pill" data-city="Malmö">Malmö</button>
+      <label class="onlysv"><input type="checkbox" id="onlySv"> Endast svensk titel</label>
       <input id="q" type="search" placeholder="Fritext i titel…" aria-label="Sök i titel">
     </div>
   </header>
