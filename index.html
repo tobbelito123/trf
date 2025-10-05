@@ -197,18 +197,18 @@
 
     // ---- init -------------------------------------------------------------
     async function init(){
-      try{
-        const r = await fetch('data/ted.json', { cache:'no-cache' });
-        if(!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data = await r.json();
-        // ✔ dina nycklar heter generated_at / notices
-        updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : '';
-        noticesRaw = Array.isArray(data.notices) ? data.notices : [];
-        render();
-      }catch(err){
-        countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
-        console.error(err);
-      }
+     try {
+  const r = await fetch('/data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error(`HTTP ${r.status} (${r.statusText})`);
+  const data = await r.json();
+
+  updEl.textContent = data.generated_at ? `• Uppdaterad: ${data.generated_at}` : "";
+  items = (data.notices || []).map(n => normalizeNotice(n)); // se normalize nedan
+  render();
+} catch (e) {
+  countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+  console.error("Kunde inte läsa data/ted.json:", e);
+}
     }
 
     // events
