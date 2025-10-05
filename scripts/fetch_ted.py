@@ -5,7 +5,7 @@ import requests
 URL = "https://api.ted.europa.eu/v3/notices/search"
 
 # Justera vid behov (t.ex. städer i stället för land)
-QUERY = 'buyer-country="SWE" AND PD>=today(-90)'
+QUERY = '(buyer-city="Göteborg" OR buyer-city="Stockholm" OR buyer-city="Malmö") AND PD>=today(-90)'
 
 BODY = {
     "query": QUERY,
