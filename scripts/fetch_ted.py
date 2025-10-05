@@ -9,8 +9,8 @@ QUERY = 'buyer-country="SWE" AND PD>=today(-365)'
 
 BODY = {
     "query": QUERY,
-    "fields": ["ND", "TI", "PD", "OJ", "RI"],  # RI often carries links
-    "limit": 100,         # pull more per page if you want
+    "fields": ["ND", "TI", "PD"],  # RI often carries links
+    "limit": 10,         # pull more per page if you want
     "page": 1,
     "scope": "ALL",
     "checkQuerySyntax": False
