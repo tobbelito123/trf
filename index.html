@@ -43,62 +43,83 @@
     Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>.
   </footer>
 
-  <script>
-    const listEl = document.getElementById('list');
-    const countEl = document.getElementById('count');
-    const updEl = document.getElementById('updated');
-    const onlySvEl = document.getElementById('onlySv');
+ <script>
+  const listEl = document.getElementById('list');
+  const countEl = document.getElementById('count');
+  const updEl = document.getElementById('updated');
+  const onlySvEl = document.getElementById('onlySv');
 
-    let items = [];
+  let items = [];
 
-    function fmtDate(iso) {
-      if (!iso) return "okänt datum";
-      try {
-        const d = new Date(iso);
-        return d.toLocaleDateString('sv-SE', { year:'numeric', month:'short', day:'2-digit' });
-      } catch { return iso; }
-    }
+  function fmtDate(pd) {
+    if (!pd) return "okänt datum";
+    // PD often looks like "2024-10-07+02:00" (no 'T'). Show the date part.
+    if (/^\d{4}-\d{2}-\d{2}/.test(pd)) return pd.slice(0, 10);
+    try { return new Date(pd).toLocaleDateString('sv-SE', {year:'numeric', month:'short', day:'2-digit'}); }
+    catch { return pd; }
+  }
 
-    function render() {
-      const filtered = onlySvEl.checked ? items.filter(x => x.has_sv) : items;
-      countEl.textContent = `${filtered.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
-      listEl.innerHTML = "";
-      filtered.forEach(n => {
-        const card = document.createElement('article');
-        card.className = 'card';
-        card.innerHTML = `
-          <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
-          <div class="meta">
-            <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
-            ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ""}
-          </div>
-          <div class="links" style="margin-top:.5rem">
-            ${n.html_url ? `<a href="${n.html_url}" target="_blank" rel="noopener">🌐 HTML</a>` : ""}
-            ${n.pdf_url ? `<a href="${n.pdf_url}" target="_blank" rel="noopener">📄 PDF</a>` : ""}
-          </div>
-        `;
-        listEl.appendChild(card);
+  function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+  function render() {
+    const filtered = onlySvEl.checked ? items.filter(x => x.has_sv) : items;
+    countEl.textContent = `${filtered.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
+    listEl.innerHTML = "";
+    filtered.forEach(n => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
+        <div class="meta">
+          <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
+          ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ""}
+        </div>
+        <div class="links" style="margin-top:.5rem">
+          ${n.html_url ? `<a href="${n.html_url}" target="_blank" rel="noopener">🌐 HTML</a>` : ""}
+          ${n.pdf_url ? `<a href="${n.pdf_url}" target="_blank" rel="noopener">📄 PDF</a>` : ""}
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+  }
+
+  async function init() {
+    try {
+      const r = await fetch('data/ted.json', { cache: 'no-cache' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+
+      // header text
+      updEl.textContent = (data.generated_at || data.generated_at_utc)
+        ? `• Uppdaterad: ${data.generated_at || data.generated_at_utc}`
+        : "";
+
+      // notices -> items your UI understands
+      const notices = data.notices || data.items || [];
+      items = notices.map(n => {
+        const TI = n.TI || n.ti || {};
+        const titleSv = TI.swe || TI.sv;
+        const anyTitle = titleSv || TI.eng || TI.en || Object.values(TI)[0] || "(saknar titel)";
+        return {
+          title: anyTitle,
+          has_sv: !!titleSv,
+          pd: n.PD || n.pd || "",
+          nd: n.ND || n.nd || "",
+          // These will remain empty until you include RI/OJ in the API fields:
+          html_url: n.html_url || null,
+          pdf_url: n.pdf_url || null
+        };
       });
+
+      render();
+    } catch (e) {
+      countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+      console.error(e);
     }
+  }
 
-    function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
-
-    async function init() {
-      try {
-        const r = await fetch('data/ted.json', { cache: 'no-cache' });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data = await r.json();
-        updEl.textContent = data.generated_at_utc ? `• Uppdaterad: ${data.generated_at_utc}` : "";
-        items = data.items || [];
-        render();
-      } catch (e) {
-        countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
-        console.error(e);
-      }
-    }
-
-    onlySvEl.addEventListener('change', render);
-    init();
-  </script>
+  onlySvEl.addEventListener('change', render);
+  init();
+</script>
 </body>
 </html>
