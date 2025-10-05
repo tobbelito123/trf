@@ -1,11 +1,11 @@
+name: Fetch TED data and update site
+
 permissions:
   contents: write
 
-name: Fetch TED data and update site
-
 on:
   schedule:
-    - cron: "10 6 * * *"   # dagligen 06:10 UTC
+    - cron: "10 6 * * *"   # daily 06:10 UTC
   workflow_dispatch:
 
 jobs:
@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,24 +28,22 @@ jobs:
       - name: Fetch Swedish TED notices
         run: python scripts/fetch_ted.py
 
-        - name: Commit & push data (if changed)
-  run: |
-    git config user.name "github-actions[bot]"
-    git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Commit & push data (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    # Make sure the data dir exists and add everything inside it
-    mkdir -p data
-    git add -A data/
+          mkdir -p data
+          git add -A data/
 
-    # If data/ is in .gitignore, force-add the JSON
-    if git check-ignore -q data/ted.json; then
-      git add -f data/ted.json
-    fi
+          # If data/ is ignored, force add the JSON
+          if git check-ignore -q data/ted.json; then
+            git add -f data/ted.json
+          fi
 
-    # Only commit if there is something staged
-    if ! git diff --cached --quiet; then
-      git commit -m "Update TED dump ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
-      git push
-    else
-      echo "No changes to commit."
-    fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Update TED dump ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+            git push
+          else
+            echo "No changes to commit."
+          fi
