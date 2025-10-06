@@ -197,7 +197,7 @@
 async function init() {
   try {
     // relative path is fine on root/apex or project pages
-    const res = await fetch('data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch('.data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
     const data = await res.json();   // <-- direct JSON parse (no extra checks)
