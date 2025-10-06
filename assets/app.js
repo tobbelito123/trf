@@ -3,11 +3,11 @@ const countEl  = document.getElementById('count');
 const updEl    = document.getElementById('updated');
 const onlySvEl = document.getElementById('onlySv');
 const qEl      = document.getElementById('q');
-const pills    = Array.from(document.querySelectorAll('.pill'));
+const pills    = Array.from(document.querySelectorAll('.chip'));
 
 let items = [];
 let view  = [];
-let activeCity = 'ALL';
+let activeCity = 'ALLA';
 
 function fmtDate(pd) {
   if (!pd) return "okänt datum";
@@ -66,7 +66,7 @@ function applyFilters() {
   const q = (qEl.value || "").trim().toLowerCase();
   view = items.filter(x =>
     (!onlySv || x.has_sv) &&
-    (activeCity === 'ALL' || x.city === activeCity) &&
+    (activeCity === 'ALLA' || (x.city || '').toLowerCase() === activeCity.toLowerCase()) &&
     (!q || x.title.toLowerCase().includes(q))
   );
 }
@@ -143,9 +143,9 @@ async function init() {
 onlySvEl.addEventListener('change', render);
 qEl.addEventListener('input', render);
 pills.forEach(btn => btn.addEventListener('click', () => {
-  pills.forEach(b => b.classList.toggle('is-active', b === btn));
-  activeCity = btn.dataset.city;
+  pills.forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  activeCity = btn.dataset.city || 'ALLA';
   render();
 }));
-
 init();
