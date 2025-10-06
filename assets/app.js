@@ -15,7 +15,11 @@ function fmtDate(pd) {
   try { return new Date(pd).toLocaleDateString('sv-SE', {year:'numeric', month:'short', day:'2-digit'}); }
   catch { return pd; }
 }
-function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({ "&":"&amp;","<":"&lt;"," >":"&gt;","\"":"&quot;" }[c])); }
+ function escapeHtml(s){
+  return (s||"").replace(/[&<>"]/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
+  }[c]));
+}            
 
 // Hämta länkar: försök från 'links', annars bygg från ND (svenska versionen)
 function pickLinks(n) {
