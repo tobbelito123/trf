@@ -105,7 +105,7 @@ function render() {
 
 async function init() {
   try {
-    const r = await fetch('data/ted.json', { cache: 'no-cache' });
+    const r = await fetch('./data/ted.json?ts=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
