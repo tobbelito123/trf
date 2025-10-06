@@ -227,19 +227,6 @@ init();
 
 
 
-    // events
-    onlySvEl.addEventListener('change', render);
-    qEl.addEventListener('input', render);
-    chips.forEach(ch => {
-      ch.addEventListener('click', () => {
-        chips.forEach(x => x.setAttribute('aria-pressed', 'false'));
-        ch.setAttribute('aria-pressed', 'true');
-        activeCity = ch.dataset.city || 'ALLA';
-        render();
-      });
-    });
-
-    init();
   </script>
 </body>
 </html>
