@@ -206,10 +206,10 @@ async function init() {
     // noticesRaw is what render() expects
     noticesRaw = Array.isArray(data.notices) ? data.notices : [];
     render();
-  } catch (e) {
-    countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
-    console.error("data/ted.json fel:", e);
-  }
+ } catch (e) {
+  countEl.textContent = "Fel: Kunde inte läsa data/ted.json";
+  console.error("data/ted.json fel:", e);
+}
 }
 
 onlySvEl.addEventListener('change', render);
