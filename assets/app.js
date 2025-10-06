@@ -24,34 +24,50 @@ function fmtDate(pd) {
 // Hämta länkar: försök från 'links', annars bygg från ND (svenska versionen)
 function pickLinks(n) {
   const nd = n.ND || n.nd || "";
+  let html = null, pdf = null;
+
+  const L = n.links;
+  if (Array.isArray(L)) {
+    for (const x of L) {
+      const u = x?.url || x?.href || "";
+      if (!u) continue;
+      if (!html && (/html/i.test(u) || /\/html(\?|$)/i.test(u))) html = u;
+      if (!pdf  && (/\.pdf(\?|$)/i.test(u) || /\/pdf(\?|$)/i.test(u)))  pdf  = u;
+    }
+  } else if (L && typeof L === 'object') {
+    // försök htmlDirect → ENG/SWE → valfritt språk
+    const hd = L.htmlDirect || {};
+    html = hd.SWE || hd.ENG || Object.values(hd)[0] || html;
+    const pdfs = L.pdf || {};
+    pdf  = pdfs.SWE || pdfs.ENG || Object.values(pdfs)[0] || pdf;
+  }
+
+  // Fallback från ND (svenska)
   const htmlFromND = nd ? `https://ted.europa.eu/udl?uri=TED:NOTICE:${nd}:TEXT:SV:HTML` : null;
   const pdfFromND  = nd ? `https://ted.europa.eu/udl?uri=TED:NOTICE:${nd}:TEXT:SV:PDF`  : null;
 
-  let html=null, pdf=null;
-  if (Array.isArray(n.links)) {
-    for (const L of n.links) {
-      const u = L.url || L.href || "";
-      if (!u) continue;
-      if (!html && /html/i.test(u)) html = u;
-      if (!pdf  && /\.pdf($|\?)/i.test(u)) pdf  = u;
-    }
-  }
   return { html_url: html || htmlFromND, pdf_url: pdf || pdfFromND };
 }
 
 // Plocka belopp + valuta från olika fält (prioritetsordning)
 function pickAmount(n) {
+  const normCcy = (x) => {
+    if (!x) return null;
+    if (Array.isArray(x)) x = x[0];
+    return typeof x === 'string' ? x.toUpperCase() : null;
+  };
+
   const tv  = n["total-value"];
-  const tvc = n["total-value-cur"];
-  if (isFinite(tv)) return { amount: Number(tv), ccy: (tvc||"").toUpperCase() || null, source: "total" };
+  const tvc = normCcy(n["total-value-cur"]);
+  if (isFinite(tv)) return { amount: Number(tv), ccy: tvc, source: "total" };
 
   const rvn  = n["result-value-notice"];
-  const rvnc = n["result-value-cur-notice"];
-  if (isFinite(rvn)) return { amount: Number(rvn), ccy: (rvnc||"").toUpperCase() || null, source: "result" };
+  const rvnc = normCcy(n["result-value-cur-notice"]);
+  if (isFinite(rvn)) return { amount: Number(rvn), ccy: rvnc, source: "result" };
 
   const evg  = n["estimated-value-glo"];
-  const evgc = n["estimated-value-cur-glo"];
-  if (isFinite(evg)) return { amount: Number(evg), ccy: (evgc||"").toUpperCase() || null, source: "estimate" };
+  const evgc = normCcy(n["estimated-value-cur-glo"]);
+  if (isFinite(evg)) return { amount: Number(evg), ccy: evgc, source: "estimate" };
 
   return null;
 }
@@ -125,7 +141,20 @@ async function init() {
         has_sv: !!titleSv,
         pd: n.PD || n.pd || "",
         nd: n.ND || n.nd || "",
-        city: n["buyer-city"] || n["buyer_city"] || null,
+        city: (() => {
+  const raw = n["buyer-city"] || n["buyer_city"] || null;
+  if (!raw) return null;
+  if (typeof raw === 'string') return raw;
+  if (Array.isArray(raw)) return raw[0] || null;
+  if (typeof raw === 'object') {
+    // ta första språk-nyckeln och första värdet
+    const firstKey = Object.keys(raw)[0];
+    const val = raw[firstKey];
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val[0] || null;
+  }
+  return null;
+})(),
         html_url, pdf_url,
         amount: amt?.amount || null,
         ccy: amt?.ccy || null
