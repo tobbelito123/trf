@@ -11,13 +11,21 @@ QUERY = '(buyer-city="Göteborg" OR buyer-city="Stockholm" OR buyer-city="Malmö
 BODY = {
     "query": QUERY,
     "fields": [
-        "ND","TI","PD","links","buyer-city",
-        "total-value","total-value-cur",
-        "result-value-notice","result-value-cur-notice",
-        "estimated-value-glo","estimated-value-cur-glo",
-        "deadline-receipt-tender-date-lot",
-    "deadline-receipt-tender-date"
-    ],
+    "ND","TI","PD","links","buyer-city",
+    "total-value","total-value-cur",
+    "result-value-notice","result-value-cur-notice",
+    "estimated-value-glo","estimated-value-cur-glo",
+
+    # --- DEADLINE-fält som faktiskt stöds (på lot-nivå) ---
+    "deadline-receipt-tender-date-lot",
+    "deadline-receipt-tender-time-lot",
+    "deadline-date-lot",
+    "deadline-time-lot",
+    "deadline-receipt-answers-date-lot",
+    "deadline-receipt-answers-time-lot",
+    "deadline-receipt-request-date-lot",
+    "deadline-receipt-request-time-lot"
+],
     "limit": 250,
     "page": 1,
     "scope": "ALL",
