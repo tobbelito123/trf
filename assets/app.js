@@ -15,6 +15,18 @@ function fmtDate(pd) {
   try { return new Date(pd).toLocaleDateString('sv-SE', {year:'numeric', month:'short', day:'2-digit'}); }
   catch { return pd; }
 }
+// ADD: normalize PD → milliseconds (handles "YYYY-MM-DD+HH:MM" too)
+function pdToMillis(pd){
+  if (!pd) return 0;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(pd)) return Date.parse(pd);                 // ISO
+  if (/^\d{4}-\d{2}-\d{2}\+\d{2}:\d{2}$/.test(pd)) {                         // "2025-07-08+02:00"
+    const [d, off] = pd.split('+');
+    return Date.parse(`${d}T00:00:00+${off}`);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(pd)) return Date.parse(`${pd}T00:00:00Z`);  // date only
+  const t = Date.parse(pd);
+  return isNaN(t) ? 0 : t;
+}
  function escapeHtml(s){
   return (s||"").replace(/[&<>"]/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
@@ -89,6 +101,7 @@ function applyFilters() {
 
 function render() {
   applyFilters();
+  view.sort((a, b) => pdToMillis(b.pd) - pdToMillis(a.pd));
   countEl.textContent = `${view.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
   listEl.innerHTML = "";
   for (const n of view) {
