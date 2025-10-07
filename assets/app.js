@@ -69,6 +69,8 @@ function pickAmount(n) {
     return typeof x === 'string' ? x.toUpperCase() : null;
   };
 
+  
+
   const tv  = n["total-value"];
   const tvc = normCcy(n["total-value-cur"]);
   if (isFinite(tv)) return { amount: Number(tv), ccy: tvc, source: "total" };
@@ -84,16 +86,28 @@ function pickAmount(n) {
   return null;
 }
 
-// Plocka ut sista svarsdag (deadline) från notice
 function pickDeadline(n) {
-  return (
-    n["deadline-receipt-tender-date-lot"] ||
-    n["deadline-receipt-tender-date"] ||
-    n["deadline-receipt-tenders-date-lot"] ||
-    n["deadline-receipt-tenders-date"] ||
-    n["DT"] || // fallback if TED uses DT
-    null
-  );
+  // 1) Vanlig anbuds-deadline
+  const d1 = n["deadline-receipt-tender-date-lot"];
+  const t1 = n["deadline-receipt-tender-time-lot"];
+  if (d1) return t1 ? `${d1} ${t1}` : d1;
+
+  // 2) Generell deadline (kan förekomma)
+  const d2 = n["deadline-date-lot"];
+  const t2 = n["deadline-time-lot"];
+  if (d2) return t2 ? `${d2} ${t2}` : d2;
+
+  // 3) Sista dag för frågor/svar (fallback)
+  const d3 = n["deadline-receipt-answers-date-lot"];
+  const t3 = n["deadline-receipt-answers-time-lot"];
+  if (d3) return t3 ? `${d3} ${t3}` : d3;
+
+  // 4) Begäran om deltagande (begränsade förfaranden)
+  const d4 = n["deadline-receipt-request-date-lot"];
+  const t4 = n["deadline-receipt-request-time-lot"];
+  if (d4) return t4 ? `${d4} ${t4}` : d4;
+
+  return null;
 }
 
 // Formatera deadline till svensk text
@@ -149,7 +163,7 @@ function render() {
   <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
   ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
   ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
-  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDeadline(n.deadline)}</span>` : ''}
+  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
   ${n.amountText ? `<span>${n.amountText}</span>` : ''}
 </div>
         ${amountHtml}
@@ -202,7 +216,8 @@ async function init() {
         deadline: pickDeadline(n),
         html_url, pdf_url,
         amount: amt?.amount || null,
-        ccy: amt?.ccy || null
+        ccy: amt?.ccy || null,
+        deadline: pickDeadline(n)
       };
     });
 
