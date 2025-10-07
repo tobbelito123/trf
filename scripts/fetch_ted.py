@@ -14,7 +14,9 @@ BODY = {
         "ND","TI","PD","links","buyer-city",
         "total-value","total-value-cur",
         "result-value-notice","result-value-cur-notice",
-        "estimated-value-glo","estimated-value-cur-glo"
+        "estimated-value-glo","estimated-value-cur-glo",
+        "deadline-receipt-tender-date-lot",
+    "deadline-receipt-tender-date"
     ],
     "limit": 250,
     "page": 1,
