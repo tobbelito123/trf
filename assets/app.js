@@ -84,6 +84,35 @@ function pickAmount(n) {
   return null;
 }
 
+// Plocka ut sista svarsdag (deadline) från notice
+function pickDeadline(n) {
+  return (
+    n["deadline-receipt-tender-date-lot"] ||
+    n["deadline-receipt-tender-date"] ||
+    n["deadline-receipt-tenders-date-lot"] ||
+    n["deadline-receipt-tenders-date"] ||
+    n["DT"] || // fallback if TED uses DT
+    null
+  );
+}
+
+// Formatera deadline till svensk text
+function fmtDeadline(deadlineStr) {
+  if (!deadlineStr) return "okänt";
+  try {
+    const d = new Date(deadlineStr.replace(' ', 'T'));
+    return d.toLocaleString('sv-SE', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return deadlineStr;
+  }
+}
+
 function fmtSEK(x) {
   try { return new Intl.NumberFormat('sv-SE', { style:'currency', currency:'SEK', maximumFractionDigits: 0 }).format(x); }
   catch { return `${Math.round(x).toLocaleString('sv-SE')} kr`; }
@@ -117,10 +146,12 @@ function render() {
       <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
       <div class="row">
         <div class="meta">
-          <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
-          ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ""}
-          ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ""}
-        </div>
+  <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
+  ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
+  ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
+  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDeadline(n.deadline)}</span>` : ''}
+  ${n.amountText ? `<span>${n.amountText}</span>` : ''}
+</div>
         ${amountHtml}
       </div>
       <div class="links">
@@ -168,6 +199,7 @@ async function init() {
   }
   return null;
 })(),
+        deadline: pickDeadline(n),
         html_url, pdf_url,
         amount: amt?.amount || null,
         ccy: amt?.ccy || null
