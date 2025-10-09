@@ -170,6 +170,8 @@ function render() {
       </div>
       <div class="links">
         ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
+        ${n['document-url-lot'] ? `<a href="${n['document-url-lot']}" ...>` : ""}
+${n['submission-url-lot'] ? `<a href="${n['submission-url-lot']}" ...>` : ""}
       </div>
     `;
     listEl.appendChild(card);
