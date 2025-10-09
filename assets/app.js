@@ -169,7 +169,6 @@ function render() {
         ${amountHtml}
       </div>
       <div class="links">
-        ${n.html_url ? `<a href="${n.html_url}" target="_blank" rel="noopener">🌐 HTML</a>` : ""}
         ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
       </div>
     `;
