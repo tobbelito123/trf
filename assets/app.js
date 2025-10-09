@@ -163,7 +163,7 @@ function render() {
   <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
   ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
   ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
-  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDeadline(n.deadline)}</span>` : ''}
+  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
   ${n.amountText ? `<span>${n.amountText}</span>` : ''}
 </div>
         ${amountHtml}
