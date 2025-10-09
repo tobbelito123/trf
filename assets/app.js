@@ -163,15 +163,15 @@ function render() {
   <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
   ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
   ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
-  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
+  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDeadline(n.deadline)}</span>` : ''}
   ${n.amountText ? `<span>${n.amountText}</span>` : ''}
 </div>
         ${amountHtml}
       </div>
       <div class="links">
         ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
-        ${n['document-url-lot'] ? `<a href="${n['document-url-lot']}" ...>` : ""}
-${n['submission-url-lot'] ? `<a href="${n['submission-url-lot']}" ...>` : ""}
+       ${n['document-url-lot'] ? `<a href="${n['document-url-lot']}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
+${n['submission-url-lot'] ? `<a href="${n['submission-url-lot']}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
       </div>
     `;
     listEl.appendChild(card);
@@ -214,7 +214,6 @@ async function init() {
   }
   return null;
 })(),
-        deadline: pickDeadline(n),
         html_url, pdf_url,
         amount: amt?.amount || null,
         ccy: amt?.ccy || null,
