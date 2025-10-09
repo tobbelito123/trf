@@ -85,7 +85,12 @@ function pickAmount(n) {
 
   return null;
 }
-
+function firstString(x){
+  if (!x) return null;
+  if (typeof x === 'string') return x;
+  if (Array.isArray(x)) return x[0] || null;
+  return null;
+}
 function pickDeadline(n) {
   // 1) Vanlig anbuds-deadline
   const d1 = n["deadline-receipt-tender-date-lot"];
@@ -170,8 +175,8 @@ function render() {
       </div>
       <div class="links">
         ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
-       ${n['document-url-lot'] ? `<a href="${n['document-url-lot']}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
-${n['submission-url-lot'] ? `<a href="${n['submission-url-lot']}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
+       ${n.document_url ? `<a href="${n.document_url}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
+${n.submission_url ? `<a href="${n.submission_url}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
       </div>
     `;
     listEl.appendChild(card);
@@ -215,6 +220,8 @@ async function init() {
   return null;
 })(),
         html_url, pdf_url,
+        document_url: firstString(n['document-url-lot']),
+submission_url: firstString(n['submission-url-lot']),
         amount: amt?.amount || null,
         ccy: amt?.ccy || null,
         deadline: pickDeadline(n)
