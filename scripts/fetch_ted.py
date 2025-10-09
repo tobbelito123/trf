@@ -24,7 +24,9 @@ BODY = {
     "deadline-receipt-answers-date-lot",
     "deadline-receipt-answers-time-lot",
     "deadline-receipt-request-date-lot",
-    "deadline-receipt-request-time-lot"
+    "deadline-receipt-request-time-lot",
+        "document-url-lot",
+"submission-url-lot"
 ],
     "limit": 250,
     "page": 1,
