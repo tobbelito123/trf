@@ -11,9 +11,6 @@ let view  = [];
 let activeCity = 'ALLA';
 let activeCpv  = 'ALL';
 
-let items = [];
-let view  = [];
-let activeCity = 'ALLA';
 
 function fmtDate(pd) {
   if (!pd) return "okänt datum";
