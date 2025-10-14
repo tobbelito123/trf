@@ -147,10 +147,11 @@ function applyFilters() {
   const onlySv = onlySvEl.checked;
   const q = (qEl.value || "").trim().toLowerCase();
   view = items.filter(x =>
-    (!onlySv || x.has_sv) &&
-    (activeCity === 'ALLA' || (x.city || '').toLowerCase() === activeCity.toLowerCase()) &&
-    (!q || x.title.toLowerCase().includes(q))
-  );
+  (!onlySv || x.has_sv) &&
+  (activeCity === 'ALLA' || (x.city || '').toLowerCase() === activeCity.toLowerCase()) &&
+  (activeCpv === 'ALL' || (x.cpv2 && x.cpv2.includes(activeCpv))) &&
+  (!q || x.title.toLowerCase().includes(q))
+);
 }
 
 function render() {
@@ -207,6 +208,14 @@ async function init() {
       const anyTitle = titleSv || TI.eng || TI.en || Object.values(TI)[0] || "(saknar titel)";
       const { html_url, pdf_url } = pickLinks(n);
       const amt = pickAmount(n);
+      // --- CPV: normalisera till tvåsiffrig sektorkod (”division”), ex "45", "72"
+const rawCpv = n["classification-cpv"] || n["main-classification-lot"] || null;
+// rawCpv kan vara string eller array
+const cpvList = Array.isArray(rawCpv) ? rawCpv : (typeof rawCpv === 'string' ? [rawCpv] : []);
+const cpv2 = cpvList
+  .map(c => (c || '').toString().replace(/\D/g,''))
+  .filter(Boolean)
+  .map(c => c.slice(0,2)); // två första siffrorna
       return {
         title: anyTitle,
         has_sv: !!titleSv,
@@ -231,7 +240,9 @@ async function init() {
 submission_url: firstString(n['submission-url-lot']),
         amount: amt?.amount || null,
         ccy: amt?.ccy || null,
-        deadline: pickDeadline(n)
+      
+        deadline: pickDeadline(n),
+        cpv2
       };
     });
 
@@ -245,6 +256,10 @@ submission_url: firstString(n['submission-url-lot']),
 // UI handlers
 onlySvEl.addEventListener('change', render);
 qEl.addEventListener('input', render);
+cpvEl.addEventListener('change', () => {
+  activeCpv = cpvEl.value || 'ALL';
+  render();
+});
 pills.forEach(btn => btn.addEventListener('click', () => {
   pills.forEach(b => b.setAttribute('aria-pressed', 'false'));
   btn.setAttribute('aria-pressed', 'true');
