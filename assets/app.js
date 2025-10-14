@@ -177,6 +177,7 @@ function render() {
   ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
   ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
   ${n.amountText ? `<span>${n.amountText}</span>` : ''}
+  ${(n.cpv2 && n.cpv2.length) ? `<span><strong>CPV:</strong> ${n.cpv2.join(', ')}</span>` : ''}
 </div>
         ${amountHtml}
       </div>
