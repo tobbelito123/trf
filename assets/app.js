@@ -181,6 +181,7 @@ ${n.submission_url ? `<a href="${n.submission_url}" target="_blank" rel="noopene
     `;
     listEl.appendChild(card);
   }
+  updateItemListSchema();
 }
 
 async function init() {
@@ -245,3 +246,33 @@ pills.forEach(btn => btn.addEventListener('click', () => {
   render();
 }));
 init();
+
+function updateItemListSchema() {
+  try {
+    // ta topp 20 i nuvarande vy
+    const top = (view || []).slice(0, 20);
+    const itemListElement = top.map((it, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "url": it.pdf_url || it.html_url || ("https://ted.europa.eu/udl?uri=TED:NOTICE:" + encodeURIComponent(it.nd) + ":TEXT:SV:PDF"),
+      "name": it.title
+    }));
+
+    const data = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListOrder": "https://schema.org/ItemListOrderDescending",
+      "numberOfItems": itemListElement.length,
+      "itemListElement": itemListElement
+    };
+
+    let tag = document.getElementById('schema-itemlist');
+    if (!tag) {
+      tag = document.createElement('script');
+      tag.type = 'application/ld+json';
+      tag.id = 'schema-itemlist';
+      document.body.appendChild(tag);
+    }
+    tag.textContent = JSON.stringify(data);
+  } catch(e) { /* no-op */ }
+}
