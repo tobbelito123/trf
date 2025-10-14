@@ -4,6 +4,12 @@ const updEl    = document.getElementById('updated');
 const onlySvEl = document.getElementById('onlySv');
 const qEl      = document.getElementById('q');
 const pills    = Array.from(document.querySelectorAll('.chip'));
+const cpvEl    = document.getElementById('cpvFilter');
+
+let items = [];
+let view  = [];
+let activeCity = 'ALLA';
+let activeCpv  = 'ALL';
 
 let items = [];
 let view  = [];
