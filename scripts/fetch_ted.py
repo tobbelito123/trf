@@ -21,6 +21,8 @@ BODY = {
     "deadline-receipt-tender-time-lot",
     "deadline-date-lot",
     "deadline-time-lot",
+        "classification-cpv",
+"main-classification-lot",
     "deadline-receipt-answers-date-lot",
     "deadline-receipt-answers-time-lot",
     "deadline-receipt-request-date-lot",
