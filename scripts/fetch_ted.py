@@ -20,6 +20,7 @@ BODY = {
     "deadline-receipt-tender-date-lot",
     "deadline-receipt-tender-time-lot",
     "deadline-date-lot",
+        "organisation-name-buyer",
     "deadline-time-lot",
         "classification-cpv",
 "main-classification-lot",
