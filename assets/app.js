@@ -172,6 +172,7 @@ function render() {
   <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
   ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
   ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
+  ${n.buyer ? `<span><strong>Upphandlande enhet:</strong> ${escapeHtml(n.buyer)}</span>` : ''}
   ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
   ${n.amountText ? `<span>${n.amountText}</span>` : ''}
 </div>
@@ -232,6 +233,19 @@ const cpv2 = cpvList
   }
   return null;
 })(),
+        buyer: (() => {
++        const raw = n["organisation-name-buyer"];
++        if (!raw) return null;
++        if (typeof raw === 'string') return raw;
++        if (Array.isArray(raw)) return raw[0] || null;
++        if (typeof raw === 'object') {
++          const firstKey = Object.keys(raw)[0];
++          const val = raw[firstKey];
++          if (typeof val === 'string') return val;
++          if (Array.isArray(val)) return val[0] || null;
++        }
++        return null;
++      })(),
         html_url, pdf_url,
         document_url: firstString(n['document-url-lot']),
 submission_url: firstString(n['submission-url-lot']),
