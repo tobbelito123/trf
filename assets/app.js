@@ -234,18 +234,18 @@ const cpv2 = cpvList
   return null;
 })(),
         buyer: (() => {
-+        const raw = n["organisation-name-buyer"];
-+        if (!raw) return null;
-+        if (typeof raw === 'string') return raw;
-+        if (Array.isArray(raw)) return raw[0] || null;
-+        if (typeof raw === 'object') {
-+          const firstKey = Object.keys(raw)[0];
-+          const val = raw[firstKey];
-+          if (typeof val === 'string') return val;
-+          if (Array.isArray(val)) return val[0] || null;
-+        }
-+        return null;
-+      })(),
+        const raw = n["organisation-name-buyer"];
+        if (!raw) return null;
+        if (typeof raw === 'string') return raw;
+        if (Array.isArray(raw)) return raw[0] || null;
+        if (typeof raw === 'object') {
+          const firstKey = Object.keys(raw)[0];
+          const val = raw[firstKey];
+          if (typeof val === 'string') return val;
+         if (Array.isArray(val)) return val[0] || null;
+      }
+       return null;
+    })(),
         html_url, pdf_url,
         document_url: firstString(n['document-url-lot']),
 submission_url: firstString(n['submission-url-lot']),
