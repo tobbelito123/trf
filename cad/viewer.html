@@ -3,24 +3,28 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>FILE PICK TEST</title>
+<title>3D Viewer</title>
 <style>
   html,body{
     margin:0;
+    height:100%;
     background:#111;
     color:#fff;
     font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    overflow:hidden;
   }
   #topbar{
-    background:#000a;
-    padding:1rem;
-    display:flex;
-    gap:.75rem;
-    align-items:center;
-    flex-wrap:wrap;
-    position:fixed;
+    position:absolute;
     top:0;left:0;right:0;
+    background:rgba(0,0,0,.7);
+    padding:.75rem 1rem;
+    display:flex;
+    align-items:flex-start;
+    gap:.75rem;
     z-index:10;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    flex-wrap:wrap;
   }
   .btn{
     background:#2a2a2a;
@@ -31,6 +35,7 @@
     font-weight:500;
     color:#fff;
     cursor:pointer;
+    line-height:1.2;
   }
   #status{
     font-size:.8rem;
@@ -39,7 +44,26 @@
     word-break:break-word;
     flex:1;
     min-width:200px;
+    max-width:70%;
   }
+  #canvasContainer{
+    position:absolute;
+    inset:0;
+  }
+  #help{
+    position:absolute;
+    left:.75rem;
+    bottom:.75rem;
+    background:rgba(0,0,0,.6);
+    color:#ccc;
+    font-size:.7rem;
+    line-height:1.4;
+    padding:.5rem .6rem;
+    border-radius:4px;
+    border:1px solid rgba(255,255,255,.1);
+    z-index:10;
+  }
+  /* Important: keep input in DOM & offscreen, not display:none */
   #fileInput{
     position:absolute;
     left:-9999px;
@@ -56,37 +80,243 @@
   <div id="status">No file loaded</div>
 </div>
 
+<div id="canvasContainer"></div>
+
+<div id="help">
+  1 finger: rotate<br>
+  2 fingers: pan<br>
+  pinch: zoom
+</div>
+
 <input id="fileInput" type="file" />
 
+<!-- three.js + controls + loaders -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/GLTFLoader.js"></script>
+
 <script>
-  const chooseBtn = document.getElementById('chooseBtn');
-  const fileInput = document.getElementById('fileInput');
+// ---------- Scene setup ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.01,
+  1000
+);
+// start a bit back so tiny models don't appear behind camera
+camera.position.set(1,1,1);
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+document.getElementById('canvasContainer').appendChild(renderer.domElement);
+
+// Lights
+const hemi = new THREE.HemisphereLight(0xffffff,0x222222,1);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff,1);
+dir.position.set(1,1,1);
+scene.add(dir);
+
+// Orbit controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.screenSpacePanning = true;
+controls.minDistance = 0.001;
+controls.maxDistance = 1000;
+
+// Keep reference to current model
+let currentObject = null;
+
+// ---------- Helpers ----------
+function clearCurrentObject(){
+  if(!currentObject) return;
+  scene.remove(currentObject);
+  currentObject.traverse?.(c=>{
+    if(c.isMesh){
+      c.geometry?.dispose?.();
+      if(c.material){
+        if(Array.isArray(c.material)){
+          c.material.forEach(m=>m.dispose?.());
+        } else {
+          c.material.dispose?.();
+        }
+      }
+    }
+  });
+  currentObject = null;
+}
+
+// Frame the model nicely in view
+function fitCameraToObject(object){
+  const box = new THREE.Box3().setFromObject(object);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+
+  // If model is degenerate (size 0), give it fake size so we don't NaN out
+  if(size.x === 0 && size.y === 0 && size.z === 0){
+    size.set(0.01,0.01,0.01);
+  }
+
+  // recenters model at origin
+  object.position.sub(center);
+
+  const maxDim = Math.max(size.x,size.y,size.z);
+  const fov = camera.fov * (Math.PI/180);
+  let dist = maxDim / (2 * Math.tan(fov/2));
+  dist *= 1.5; // padding
+
+  // If model is extremely tiny (like 684 bytes STL), keep distance reasonable
+  if (dist < 0.05) dist = 0.05;
+
+  camera.position.set(dist, dist, dist);
+  camera.lookAt(0,0,0);
+  controls.target.set(0,0,0);
+  controls.update();
+}
+
+// Loaders
+function parseSTL(arrayBuffer){
+  const loader = new THREE.STLLoader();
+  const geom = loader.parse(arrayBuffer);
+  const mat = new THREE.MeshStandardMaterial({
+    color:0xcccccc,
+    metalness:0.1,
+    roughness:0.7
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function parseOBJ(text){
+  const loader = new THREE.OBJLoader();
+  const obj = loader.parse(text);
+  obj.traverse(c=>{
+    if(c.isMesh && !c.material){
+      c.material = new THREE.MeshStandardMaterial({
+        color:0xcccccc,
+        metalness:0.1,
+        roughness:0.7
+      });
+    }
+    if(c.isMesh){
+      c.castShadow = true;
+      c.receiveShadow = true;
+    }
+  });
+  return obj;
+}
+
+function parseGLTF(arrayBuffer){
+  return new Promise((resolve,reject)=>{
+    const loader = new THREE.GLTFLoader();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    loader.load(
+      url,
+      gltf=>{
+        URL.revokeObjectURL(url);
+        resolve(gltf.scene);
+      },
+      undefined,
+      err=>{
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    );
+  });
+}
+
+// Main render of selected file
+async function loadAndDisplayFile(file){
   const statusBox = document.getElementById('status');
 
-  // when you tap the visible button
-  chooseBtn.addEventListener('click', () => {
-    statusBox.textContent = 'Opening picker...';
-    fileInput.value = '';
-    fileInput.click();
-  });
+  // show debug info
+  statusBox.textContent = `Loading "${file.name}" (${file.size} bytes)...`;
 
-  // when you actually pick a file
-  fileInput.addEventListener('change', () => {
-    // does the browser think we picked something?
-    const count = fileInput.files.length;
+  // clear any previous model
+  clearCurrentObject();
 
-    if (count === 0) {
-      statusBox.textContent = 'Picker closed, but browser returned 0 files.';
+  const lower = file.name.toLowerCase();
+  try {
+    if (lower.endsWith('.stl')){
+      const buf = await file.arrayBuffer();
+      currentObject = parseSTL(buf);
+    } else if (lower.endsWith('.obj')){
+      const txt = await file.text();
+      currentObject = parseOBJ(txt);
+    } else if (lower.endsWith('.gltf') || lower.endsWith('.glb')){
+      const buf = await file.arrayBuffer();
+      currentObject = await parseGLTF(buf);
+    } else {
+      statusBox.textContent = `Unsupported file type for "${file.name}"`;
       return;
     }
 
-    const f = fileInput.files[0];
-    statusBox.textContent =
-      `Got ${count} file(s): ` +
-      `"${f.name}" ` +
-      `size=${f.size} bytes ` +
-      `type=${f.type || '(no mime)'}`;
-  });
+    // add and frame
+    scene.add(currentObject);
+    fitCameraToObject(currentObject);
+
+    statusBox.textContent = `Loaded "${file.name}" (${file.size} bytes)`;
+  } catch (err){
+    console.error(err);
+    statusBox.textContent = `Failed to load "${file.name}"`;
+    alert('Error loading model');
+  }
+}
+
+// ---------- UI wiring ----------
+const chooseBtn = document.getElementById('chooseBtn');
+const fileInput = document.getElementById('fileInput');
+const statusBox = document.getElementById('status');
+
+// user taps "Choose 3D file"
+chooseBtn.addEventListener('click', () => {
+  // reset input so same file can be chosen again
+  fileInput.value = '';
+  statusBox.textContent = 'Opening picker...';
+  fileInput.click();
+});
+
+// picker returns
+fileInput.addEventListener('change', () => {
+  const count = fileInput.files.length;
+  if (count === 0){
+    statusBox.textContent = 'Picker closed, 0 files returned.';
+    return;
+  }
+
+  const f = fileInput.files[0];
+  statusBox.textContent = `Got 1 file: "${f.name}" (${f.size} bytes)`;
+  loadAndDisplayFile(f);
+});
+
+// ---------- Resize and render loop ----------
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
 </script>
 
 </body>
