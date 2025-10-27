@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>TEST WIRED</title>
+<style>
+  body { background:#111; color:#fff; font-family:sans-serif; padding:20px; }
+  .tag { background:red; color:#fff; padding:8px 10px; border:2px solid yellow; font-weight:bold; }
+  #status { margin-top:20px; color:#0f0; font-size:16px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+
+<div class="tag">IF YOU SEE THIS, YOU ARE ON THE NEW FILE</div>
+
+<div id="status">JS NOT RUN</div>
+
+<script type="module">
+  const statusEl = document.getElementById("status");
+  statusEl.textContent = "✅ JAVASCRIPT IS RUNNING IN THE BROWSER.\nTHREE WILL LOAD NEXT...";
+  console.log("Inline module script ran.");
+
+  import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+  statusEl.textContent += `\nthree.js revision (should be 180): ${THREE.REVISION}`;
+</script>
+
+</body>
+</html>
