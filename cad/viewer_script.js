@@ -1,1 +1,234 @@
 
+<script type="module">
+/*
+IMPORTANT: THIS SCRIPT MUST EXIST IN THE DEPLOYED FILE.
+IF YOU DO NOT SEE "Ready (three.js r180)" WHEN YOU LOAD THE PAGE,
+THIS SCRIPT IS NOT RUNNING.
+*/
+
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
+import { STLLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js";
+import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/OBJLoader.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+
+/* ---- grab DOM ---- */
+const statusEl   = document.getElementById("status");
+const loadBtn    = document.getElementById("loadBtn");
+const fileInput  = document.getElementById("fileInput");
+const container  = document.getElementById("canvasContainer");
+
+/* ---- globals ---- */
+let scene, camera, renderer, controls;
+let currentObject = null;
+let selectedFile  = null;
+
+/* ---- scene setup ---- */
+scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.01,
+  1000
+);
+camera.position.set(1,1,1);
+
+renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+container.appendChild(renderer.domElement);
+
+const hemi = new THREE.HemisphereLight(0xffffff,0x222222,1);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff,1);
+dir.position.set(1,1,1);
+scene.add(dir);
+
+controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.screenSpacePanning = true;
+controls.minDistance = 0.001;
+controls.maxDistance = 1000;
+
+/* ---- helpers ---- */
+function clearCurrentObject(){
+  if(!currentObject) return;
+  scene.remove(currentObject);
+  currentObject.traverse?.(c=>{
+    if(c.isMesh){
+      c.geometry?.dispose?.();
+      if(c.material){
+        if(Array.isArray(c.material)){
+          c.material.forEach(m=>m.dispose?.());
+        } else {
+          c.material.dispose?.();
+        }
+      }
+    }
+  });
+  currentObject = null;
+}
+
+function fitCameraToObject(object){
+  const box    = new THREE.Box3().setFromObject(object);
+  const size   = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+
+  // avoid zero-size causing NaNs
+  if(size.x===0 && size.y===0 && size.z===0){
+    size.set(0.01,0.01,0.01);
+  }
+
+  // recenter model so origin = model center
+  object.position.sub(center);
+
+  const maxDim = Math.max(size.x,size.y,size.z);
+  const fov    = camera.fov * (Math.PI/180);
+  let dist     = maxDim / (2 * Math.tan(fov/2));
+  dist        *= 1.5;
+  if(dist < 0.05) dist = 0.05;
+
+  camera.position.set(dist, dist, dist);
+  camera.lookAt(0,0,0);
+  controls.target.set(0,0,0);
+  controls.update();
+}
+
+/* parsers */
+function parseSTL(buf){
+  const loader = new STLLoader();
+  const geom   = loader.parse(buf);
+  const mat    = new THREE.MeshStandardMaterial({
+    color:0xcccccc,
+    metalness:0.1,
+    roughness:0.7
+  });
+  const mesh   = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function parseOBJ(txt){
+  const loader = new OBJLoader();
+  const obj    = loader.parse(txt);
+  obj.traverse(c=>{
+    if(c.isMesh && !c.material){
+      c.material = new THREE.MeshStandardMaterial({
+        color:0xcccccc,
+        metalness:0.1,
+        roughness:0.7
+      });
+    }
+    if(c.isMesh){
+      c.castShadow = true;
+      c.receiveShadow = true;
+    }
+  });
+  return obj;
+}
+
+function parseGLTF(buf){
+  return new Promise((resolve,reject)=>{
+    const loader = new GLTFLoader();
+    const blob   = new Blob([buf]);
+    const url    = URL.createObjectURL(blob);
+    loader.load(
+      url,
+      gltf=>{
+        URL.revokeObjectURL(url);
+        resolve(gltf.scene);
+      },
+      undefined,
+      err=>{
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    );
+  });
+}
+
+/* high-level loader */
+async function loadAndDisplayFile(file){
+  if(!file){
+    statusEl.textContent = "No file selected.";
+    return;
+  }
+  statusEl.textContent = `Loading "${file.name}" (${file.size} bytes)...`;
+
+  clearCurrentObject();
+
+  const lower = file.name.toLowerCase();
+
+  try {
+    if(lower.endsWith(".stl")){
+      const buf = await file.arrayBuffer();
+      currentObject = parseSTL(buf);
+    } else if(lower.endsWith(".obj")){
+      const txt = await file.text();
+      currentObject = parseOBJ(txt);
+    } else if(lower.endsWith(".gltf") || lower.endsWith(".glb")){
+      const buf = await file.arrayBuffer();
+      currentObject = await parseGLTF(buf);
+    } else {
+      statusEl.textContent = `Unsupported file type for "${file.name}"`;
+      return;
+    }
+
+    scene.add(currentObject);
+    fitCameraToObject(currentObject);
+
+    statusEl.textContent = `Loaded "${file.name}" (${file.size} bytes)`;
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = `Error loading "${file.name}": ${e}`;
+  }
+}
+
+/* ---- events ---- */
+
+/* fires when user selects a file from picker */
+fileInput.addEventListener("change", () => {
+  if(!fileInput.files.length){
+    statusEl.textContent = "Picker closed.";
+    selectedFile = null;
+    return;
+  }
+  selectedFile = fileInput.files[0];
+  statusEl.textContent =
+    `Chosen: "${selectedFile.name}" (${selectedFile.size} bytes). Press Load.`;
+});
+
+/* fires when user presses Load */
+loadBtn.addEventListener("click", () => {
+  if(!selectedFile){
+    statusEl.textContent = "No file chosen yet.";
+    return;
+  }
+  loadAndDisplayFile(selectedFile);
+});
+
+/* resize + render loop */
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
+
+/* tell us immediately that script is live */
+statusEl.textContent = `Ready (three.js r${THREE.REVISION})`;
+console.log("THREE.REVISION =", THREE.REVISION);
+</script>
