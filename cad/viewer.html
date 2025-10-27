@@ -1,270 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>3D Viewer</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    #topbar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 0.75rem 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      z-index: 10;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-
-    .topbtn {
-      background: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 0.6rem 0.8rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      line-height: 1.2;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .topbtn:active {
-      opacity: 0.7;
-    }
-
-    #filename {
-      font-size: 0.8rem;
-      color: #9e9e9e;
-      min-width: 0;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      flex: 1;
-    }
-
-    #canvasContainer {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-    }
-
-    #help {
-      position: absolute;
-      left: 0.75rem;
-      bottom: 0.75rem;
-      background: rgba(0, 0, 0, 0.6);
-      color: #ccc;
-      font-size: 0.7rem;
-      line-height: 1.4;
-      padding: 0.5rem 0.6rem;
-      border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      max-width: 70%;
-      z-index: 10;
-    }
-
-    #fileInput {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>FILE PICK TEST</title>
+<style>
+  html,body{
+    margin:0;
+    background:#111;
+    color:#fff;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  #topbar{
+    background:#000a;
+    padding:1rem;
+    display:flex;
+    gap:.75rem;
+    align-items:center;
+    flex-wrap:wrap;
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:10;
+  }
+  .btn{
+    background:#2a2a2a;
+    border:1px solid #444;
+    border-radius:6px;
+    padding:.6rem .8rem;
+    font-size:.9rem;
+    font-weight:500;
+    color:#fff;
+    cursor:pointer;
+  }
+  #status{
+    font-size:.8rem;
+    color:#9e9e9e;
+    line-height:1.4;
+    word-break:break-word;
+    flex:1;
+    min-width:200px;
+  }
+  #fileInput{
+    position:absolute;
+    left:-9999px;
+    width:1px;
+    height:1px;
+    opacity:0;
+  }
+</style>
 </head>
 <body>
-  <div id="topbar">
-    <label for="fileInput" class="topbtn">Choose 3D file</label>
-    <button id="loadBtn" type="button" class="topbtn">Load</button>
-    <input id="fileInput" type="file" />
-    <div id="filename">No file loaded</div>
-  </div>
 
-  <div id="canvasContainer"></div>
+<div id="topbar">
+  <button id="chooseBtn" class="btn">Choose 3D file</button>
+  <div id="status">No file loaded</div>
+</div>
 
-  <div id="help">
-    1 finger: rotate<br/>
-    2 fingers: pan<br/>
-    pinch: zoom
-  </div>
+<input id="fileInput" type="file" />
 
-  <!-- three.js and loaders -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/STLLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/OBJLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+  const chooseBtn = document.getElementById('chooseBtn');
+  const fileInput = document.getElementById('fileInput');
+  const statusBox = document.getElementById('status');
 
-  <script>
-    const container = document.getElementById('canvasContainer');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x111111);
+  // when you tap the visible button
+  chooseBtn.addEventListener('click', () => {
+    statusBox.textContent = 'Opening picker...';
+    fileInput.value = '';
+    fileInput.click();
+  });
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1000);
-    camera.position.set(0.3, 0.3, 0.3);
+  // when you actually pick a file
+  fileInput.addEventListener('change', () => {
+    // does the browser think we picked something?
+    const count = fileInput.files.length;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    container.appendChild(renderer.domElement);
-
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x222222, 1);
-    scene.add(hemiLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-    dirLight.position.set(1, 1, 1);
-    scene.add(dirLight);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    let currentObject = null;
-
-    function clearObject() {
-      if (!currentObject) return;
-      scene.remove(currentObject);
-      currentObject.traverse?.(c => {
-        if (c.isMesh) {
-          c.geometry.dispose();
-          if (c.material) {
-            if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
-            else c.material.dispose();
-          }
-        }
-      });
-      currentObject = null;
+    if (count === 0) {
+      statusBox.textContent = 'Picker closed, but browser returned 0 files.';
+      return;
     }
 
-    function fitCamera(obj) {
-      const box = new THREE.Box3().setFromObject(obj);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-      obj.position.sub(center);
+    const f = fileInput.files[0];
+    statusBox.textContent =
+      `Got ${count} file(s): ` +
+      `"${f.name}" ` +
+      `size=${f.size} bytes ` +
+      `type=${f.type || '(no mime)'}`;
+  });
+</script>
 
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let distance = maxDim / (2 * Math.tan(fov / 2));
-      distance *= 1.5;
-      camera.position.set(distance, distance, distance);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-
-    function loadSTL(arrayBuffer) {
-      const loader = new THREE.STLLoader();
-      const geo = loader.parse(arrayBuffer);
-      const mat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.1, roughness: 0.7 });
-      const mesh = new THREE.Mesh(geo, mat);
-      return mesh;
-    }
-
-    function loadOBJ(text) {
-      const loader = new THREE.OBJLoader();
-      const obj = loader.parse(text);
-      obj.traverse(c => {
-        if (c.isMesh) {
-          if (!c.material)
-            c.material = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-          c.castShadow = c.receiveShadow = true;
-        }
-      });
-      return obj;
-    }
-
-    function loadGLTF(arrayBuffer) {
-      return new Promise((resolve, reject) => {
-        const loader = new THREE.GLTFLoader();
-        const blob = new Blob([arrayBuffer]);
-        const url = URL.createObjectURL(blob);
-        loader.load(
-          url,
-          gltf => {
-            URL.revokeObjectURL(url);
-            resolve(gltf.scene);
-          },
-          undefined,
-          err => {
-            URL.revokeObjectURL(url);
-            reject(err);
-          }
-        );
-      });
-    }
-
-    async function handleFile(file) {
-      const filename = document.getElementById('filename');
-      filename.textContent = file.name;
-      clearObject();
-      const lower = file.name.toLowerCase();
-      try {
-        if (lower.endsWith('.stl')) {
-          const buf = await file.arrayBuffer();
-          currentObject = loadSTL(buf);
-        } else if (lower.endsWith('.obj')) {
-          const text = await file.text();
-          currentObject = loadOBJ(text);
-        } else if (lower.endsWith('.gltf') || lower.endsWith('.glb')) {
-          const buf = await file.arrayBuffer();
-          currentObject = await loadGLTF(buf);
-        } else {
-          alert('Unsupported file type');
-          return;
-        }
-        scene.add(currentObject);
-        fitCamera(currentObject);
-      } catch (err) {
-        alert('Error loading model');
-        console.error(err);
-      }
-    }
-
-    const fileInput = document.getElementById('fileInput');
-    const loadBtn = document.getElementById('loadBtn');
-    const filenameBox = document.getElementById('filename');
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) {
-        filenameBox.textContent = fileInput.files[0].name;
-      } else {
-        filenameBox.textContent = 'No file selected';
-      }
-    });
-
-    loadBtn.addEventListener('click', () => {
-      if (!fileInput.files.length) {
-        filenameBox.textContent = 'No file selected';
-        return;
-      }
-      handleFile(fileInput.files[0]);
-    });
-
-    function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onResize);
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-  </script>
 </body>
 </html>
