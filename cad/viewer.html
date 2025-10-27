@@ -30,7 +30,8 @@
     -webkit-backdrop-filter:blur(6px);
   }
 
-  .btn{
+  /* we use a label styled as button */
+  .fileLabelBtn{
     background:#2a2a2a;
     border:1px solid #444;
     border-radius:6px;
@@ -73,36 +74,30 @@
   }
 
   /*
-    We keep the real file input in the DOM, not display:none,
-    so iOS will allow it. We'll just visually shrink it.
-    We'll trigger it from the button.
+    IMPORTANT:
+    The input must be in the DOM, not display:none.
+    We'll keep it tiny and transparent, but still
+    physically present so iOS is happy.
   */
-  #fileWrapper {
-    position:relative;
-    width:0;
-    height:0;
-    overflow:hidden;
-  }
-
   #fileInput{
-    font-size:16px; /* iOS: avoid zoom */
     opacity:0;
+    width:1px;
+    height:1px;
     position:absolute;
     left:0;
     top:0;
-    width:1px;
-    height:1px;
   }
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <button id="chooseBtn" class="btn">Choose 3D file</button>
+  <!-- label triggers the hidden-looking input -->
+  <label for="fileInput" class="fileLabelBtn">Choose 3D file</label>
+
   <div id="status">No file loaded</div>
-  <div id="fileWrapper">
-    <input id="fileInput" type="file" />
-  </div>
+
+  <input id="fileInput" type="file" />
 </div>
 
 <div id="canvasContainer"></div>
@@ -121,10 +116,9 @@ import { STLLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/j
 import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/OBJLoader.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
-const statusEl = document.getElementById("status");
-const chooseBtn = document.getElementById("chooseBtn");
-const fileInput = document.getElementById("fileInput");
-const canvasContainer = document.getElementById("canvasContainer");
+const statusEl   = document.getElementById("status");
+const fileInput  = document.getElementById("fileInput");
+const container  = document.getElementById("canvasContainer");
 
 // --- Scene setup ---
 const scene = new THREE.Scene();
@@ -141,7 +135,7 @@ camera.position.set(1,1,1);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio || 1);
-canvasContainer.appendChild(renderer.domElement);
+container.appendChild(renderer.domElement);
 
 // Lights
 const hemi = new THREE.HemisphereLight(0xffffff,0x222222,1);
@@ -158,7 +152,7 @@ controls.screenSpacePanning = true;
 controls.minDistance = 0.001;
 controls.maxDistance = 1000;
 
-// Current model ref
+// Track current mesh
 let currentObject = null;
 
 function clearCurrentObject(){
@@ -179,7 +173,7 @@ function clearCurrentObject(){
   currentObject = null;
 }
 
-// Center model and move camera so it's nicely framed
+// Position camera around loaded object
 function fitCameraToObject(object){
   const box = new THREE.Box3().setFromObject(object);
   const size = new THREE.Vector3();
@@ -187,20 +181,20 @@ function fitCameraToObject(object){
   box.getSize(size);
   box.getCenter(center);
 
-  // avoid NaN / zero
+  // Avoid zero-size causing NaN
   if(size.x===0 && size.y===0 && size.z===0){
     size.set(0.01,0.01,0.01);
   }
 
-  // recenter object at origin
+  // Move model so that its center is at (0,0,0)
   object.position.sub(center);
 
+  // Distance so model fits view
   const maxDim = Math.max(size.x,size.y,size.z);
   const fov = camera.fov * (Math.PI/180);
   let dist = maxDim / (2 * Math.tan(fov/2));
-  dist *= 1.5; // padding
+  dist *= 1.5;
 
-  // don't go too close, even for tiny files
   if(dist < 0.05) dist = 0.05;
 
   camera.position.set(dist, dist, dist);
@@ -209,7 +203,7 @@ function fitCameraToObject(object){
   controls.update();
 }
 
-// Parsers
+// Converters for each format
 function parseSTL(buf){
   const loader = new STLLoader();
   const geom = loader.parse(buf);
@@ -218,7 +212,7 @@ function parseSTL(buf){
     metalness:0.1,
     roughness:0.7
   });
-  const mesh = new THREE.Mesh(geom,mat);
+  const mesh = new THREE.Mesh(geom, mat);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
@@ -247,7 +241,7 @@ function parseGLTF(buf){
   return new Promise((resolve,reject)=>{
     const loader = new GLTFLoader();
     const blob = new Blob([buf]);
-    const url = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
     loader.load(
       url,
       gltf=>{
@@ -263,13 +257,13 @@ function parseGLTF(buf){
   });
 }
 
-// High-level: take a File and show it
+// Load file -> render
 async function loadAndDisplayFile(file){
   statusEl.textContent = `Loading "${file.name}" (${file.size} bytes)...`;
+
   clearCurrentObject();
 
   const lower = file.name.toLowerCase();
-
   try{
     if(lower.endsWith(".stl")){
       const buf = await file.arrayBuffer();
@@ -296,15 +290,7 @@ async function loadAndDisplayFile(file){
   }
 }
 
-// Button opens picker
-chooseBtn.addEventListener("click", () => {
-  // reset so you can pick the same file twice
-  fileInput.value = "";
-  statusEl.textContent = "Opening picker...";
-  fileInput.click();
-});
-
-// When a file is chosen
+// When user selects a file (this is the ONLY event flow now)
 fileInput.addEventListener("change", () => {
   const count = fileInput.files.length;
   if(count === 0){
@@ -316,14 +302,14 @@ fileInput.addEventListener("change", () => {
   loadAndDisplayFile(f);
 });
 
-// Resize
+// Handle screen resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Render loop
+// Animation/render loop
 function animate(){
   requestAnimationFrame(animate);
   controls.update();
