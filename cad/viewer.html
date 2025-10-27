@@ -30,8 +30,9 @@
     -webkit-backdrop-filter:blur(6px);
   }
 
-  /* style both the label-button and the real button the same */
+  /* Shared button look */
   .btnLike{
+    position:relative;
     background:#2a2a2a;
     border:1px solid #444;
     border-radius:6px;
@@ -43,6 +44,30 @@
     cursor:pointer;
     -webkit-tap-highlight-color:rgba(255,255,255,0.2);
     display:inline-block;
+    user-select:none;
+  }
+
+  /* The actual file input will sit ON TOP OF the text inside this label,
+     but be transparent. That way, tapping the label is literally tapping
+     the input directly. */
+  .filePickWrapper{
+    position:relative;
+    overflow:hidden;
+  }
+
+  .filePickWrapper input[type=file]{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    opacity:0;
+    font-size:16px; /* stop iOS zoom */
+    cursor:pointer;
+  }
+
+  #loadBtn.btnLike{
+    /* real button, no hidden input over it */
   }
 
   #status{
@@ -73,34 +98,21 @@
     border:1px solid rgba(255,255,255,0.1);
     z-index:10;
   }
-
-  /* IMPORTANT:
-     The input MUST be in the DOM, not display:none.
-     We'll keep it tiny/transparent at top-left.
-  */
-  #fileInput{
-    position:absolute;
-    left:0;
-    top:0;
-    width:1px;
-    height:1px;
-    opacity:0;
-    font-size:16px; /* avoid iOS zoom */
-  }
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <!-- This label opens the native picker because it's bound to #fileInput -->
-  <label for="fileInput" class="btnLike" id="chooseLabel">Choose 3D file</label>
+  <!-- Choose button: visual label + real input layered on top -->
+  <label class="btnLike filePickWrapper">
+    Choose 3D file
+    <input id="fileInput" type="file" />
+  </label>
 
-  <!-- This is a real button for loading after selection -->
+  <!-- Load button: normal button -->
   <button id="loadBtn" class="btnLike" type="button">Load</button>
 
   <div id="status">No file loaded</div>
-
-  <input id="fileInput" type="file" />
 </div>
 
 <div id="canvasContainer"></div>
@@ -122,7 +134,7 @@ let scene, camera, renderer, controls;
 let currentObject = null;
 let selectedFile = null;
 
-// ---- three.js scene setup ----
+/* ========== SCENE SETUP ========== */
 scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 
@@ -139,14 +151,13 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio || 1);
 container.appendChild(renderer.domElement);
 
-// lights
 const hemi = new THREE.HemisphereLight(0xffffff,0x222222,1);
 scene.add(hemi);
+
 const dir = new THREE.DirectionalLight(0xffffff,1);
 dir.position.set(1,1,1);
 scene.add(dir);
 
-// controls
 controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
@@ -154,7 +165,7 @@ controls.screenSpacePanning = true;
 controls.minDistance = 0.001;
 controls.maxDistance = 1000;
 
-// ---- helpers ----
+/* ========== HELPERS ========== */
 function clearCurrentObject(){
   if(!currentObject) return;
   scene.remove(currentObject);
@@ -287,11 +298,10 @@ async function loadAndDisplayFile(file){
   }
 }
 
-// ---- events ----
+/* ========== EVENTS ========== */
 
-// 1. User picks a file via label/input.
-//    We DO NOT call .click() in JS at all.
-//    After the picker closes, we cache the file but don't load yet.
+/* After picking a file (this should FINALLY fire on both iOS + desktop)
+   because the <input> fully overlaps the visible label area. */
 fileInput.addEventListener("change", () => {
   if(!fileInput.files.length){
     statusEl.textContent = "Picker closed.";
@@ -299,10 +309,11 @@ fileInput.addEventListener("change", () => {
     return;
   }
   selectedFile = fileInput.files[0];
-  statusEl.textContent = `Chosen: "${selectedFile.name}" (${selectedFile.size} bytes). Press Load.`;
+  statusEl.textContent =
+    `Chosen: "${selectedFile.name}" (${selectedFile.size} bytes). Press Load.`;
 });
 
-// 2. User presses Load to actually render the chosen file
+/* User presses Load to actually display */
 loadBtn.addEventListener("click", () => {
   if(!selectedFile){
     statusEl.textContent = "No file chosen yet.";
@@ -311,7 +322,7 @@ loadBtn.addEventListener("click", () => {
   loadAndDisplayFile(selectedFile);
 });
 
-// resize + render loop
+/* resize + render loop */
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -325,7 +336,7 @@ function animate(){
 }
 animate();
 
-// init status
+// initial status
 statusEl.textContent = `Ready (three.js r${THREE.REVISION})`;
 console.log("THREE.REVISION =", THREE.REVISION);
 </script>
