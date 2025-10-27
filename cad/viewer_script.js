@@ -1,29 +1,19 @@
-
-<script type="module">
-/*
-IMPORTANT: THIS SCRIPT MUST EXIST IN THE DEPLOYED FILE.
-IF YOU DO NOT SEE "Ready (three.js r180)" WHEN YOU LOAD THE PAGE,
-THIS SCRIPT IS NOT RUNNING.
-*/
-
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/OBJLoader.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
-/* ---- grab DOM ---- */
 const statusEl   = document.getElementById("status");
 const loadBtn    = document.getElementById("loadBtn");
 const fileInput  = document.getElementById("fileInput");
 const container  = document.getElementById("canvasContainer");
 
-/* ---- globals ---- */
 let scene, camera, renderer, controls;
 let currentObject = null;
 let selectedFile  = null;
 
-/* ---- scene setup ---- */
+// scene setup
 scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 
@@ -54,7 +44,7 @@ controls.screenSpacePanning = true;
 controls.minDistance = 0.001;
 controls.maxDistance = 1000;
 
-/* ---- helpers ---- */
+// helpers
 function clearCurrentObject(){
   if(!currentObject) return;
   scene.remove(currentObject);
@@ -80,12 +70,10 @@ function fitCameraToObject(object){
   box.getSize(size);
   box.getCenter(center);
 
-  // avoid zero-size causing NaNs
   if(size.x===0 && size.y===0 && size.z===0){
     size.set(0.01,0.01,0.01);
   }
 
-  // recenter model so origin = model center
   object.position.sub(center);
 
   const maxDim = Math.max(size.x,size.y,size.z);
@@ -100,7 +88,6 @@ function fitCameraToObject(object){
   controls.update();
 }
 
-/* parsers */
 function parseSTL(buf){
   const loader = new STLLoader();
   const geom   = loader.parse(buf);
@@ -154,7 +141,6 @@ function parseGLTF(buf){
   });
 }
 
-/* high-level loader */
 async function loadAndDisplayFile(file){
   if(!file){
     statusEl.textContent = "No file selected.";
@@ -191,9 +177,7 @@ async function loadAndDisplayFile(file){
   }
 }
 
-/* ---- events ---- */
-
-/* fires when user selects a file from picker */
+// events
 fileInput.addEventListener("change", () => {
   if(!fileInput.files.length){
     statusEl.textContent = "Picker closed.";
@@ -205,7 +189,6 @@ fileInput.addEventListener("change", () => {
     `Chosen: "${selectedFile.name}" (${selectedFile.size} bytes). Press Load.`;
 });
 
-/* fires when user presses Load */
 loadBtn.addEventListener("click", () => {
   if(!selectedFile){
     statusEl.textContent = "No file chosen yet.";
@@ -214,7 +197,6 @@ loadBtn.addEventListener("click", () => {
   loadAndDisplayFile(selectedFile);
 });
 
-/* resize + render loop */
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -228,7 +210,6 @@ function animate(){
 }
 animate();
 
-/* tell us immediately that script is live */
+// tell us script actually ran
 statusEl.textContent = `Ready (three.js r${THREE.REVISION})`;
 console.log("THREE.REVISION =", THREE.REVISION);
-</script>
