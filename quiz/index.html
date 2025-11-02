@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz: Fotosyntes för 10-åringar</title>
+  <style>
+    :root{
+      --bg:#f4fbf6;
+      --card:#ffffff;
+      --accent:#2e8b57;
+      --accent-2:#7fcf6c;
+      --text:#0b3b2e;
+      --muted:#6b7a73;
+      --correct:#d4f8e1;
+      --wrong:#fde8e8;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#e9f7ee);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .wrap{
+      width:100%;
+      max-width:900px;
+      background:var(--card);
+      border-radius:14px;
+      box-shadow:0 6px 30px rgba(11,59,46,0.12);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      padding:18px 20px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:white;
+    }
+    .logo{
+      width:56px;
+      height:56px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .logo svg{width:40px;height:40px}
+    header h1{
+      font-size:1.1rem;
+      margin:0;
+      line-height:1.05;
+    }
+    header p{margin:0;font-size:0.85rem;opacity:0.95}
+    main{padding:20px;display:flex;gap:20px;flex-wrap:wrap}
+    .quiz{
+      flex:1 1 360px;
+      min-width:260px;
+    }
+    .info{
+      width:260px;
+      flex:0 0 260px;
+      background:linear-gradient(180deg,rgba(127,207,108,0.08),rgba(46,139,87,0.03));
+      border-radius:10px;
+      padding:12px;
+      height:fit-content;
+    }
+    .question-card{
+      background:linear-gradient(180deg,white, #fbfff9);
+      border-radius:10px;
+      padding:16px;
+      box-shadow:0 4px 18px rgba(11,59,46,0.06);
+    }
+    .qtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .progress{font-size:0.9rem;color:var(--muted)}
+    .question{font-size:1.15rem;margin:8px 0 14px}
+    .choices{display:flex;flex-direction:column;gap:10px}
+    .choice{
+      background:#f7fff7;
+      border:2px solid rgba(11,59,46,0.06);
+      padding:12px;
+      border-radius:10px;
+      cursor:pointer;
+      text-align:left;
+      font-size:1rem;
+      transition:transform .08s ease, box-shadow .08s;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .choice:active{transform:scale(.997)}
+    .choice:focus{outline:3px solid rgba(46,139,87,0.18)}
+    .choice.correct{background:var(--correct);border-color:rgba(46,139,87,0.3)}
+    .choice.wrong{background:var(--wrong);border-color:rgba(220,38,38,0.12)}
+    .explanation{margin-top:12px;padding:10px;border-radius:8px;background:#f9fff9;color:var(--muted);font-size:0.95rem}
+    .buttons{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    button{
+      background:var(--accent);
+      color:white;
+      border:none;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    button.secondary{
+      background:transparent;color:var(--accent);border:2px solid rgba(46,139,87,0.14);
+    }
+    .result{
+      text-align:center;padding:18px;
+    }
+    .score{
+      font-size:2.2rem;font-weight:800;color:var(--accent);
+      margin:6px 0;
+    }
+    footer{padding:12px 20px;font-size:0.85rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+    a.small{color:var(--accent);text-decoration:none;font-weight:600}
+    @media (max-width:800px){
+      main{padding:16px}
+      .info{order:2;width:100%;flex-basis:100%}
+      .quiz{order:1;width:100%}
+      header{flex-direction:row;gap:12px}
+    }
+    /* small accessible focus */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-labelledby="headline">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <!-- simple plant icon -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="48" cy="12" r="8" fill="#FFD65C"/>
+          <path d="M24 60c0-16 16-20 16-20s4-12-8-16c0 0 8 2 6 12s-14 24-14 24z" fill="#2E8B57"/>
+          <path d="M20 48s8-10 6-18c0 0 6 8 0 18l-6 0z" fill="#7FCF6C"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="headline">Quiz: Fotosyntes</h1>
+        <p>En enkel och rolig quiz på svenska — passar barn omkring 10 år.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="quiz" aria-live="polite">
+        <div class="question-card" id="quizCard">
+          <div class="qtop">
+            <div class="progress" id="progress">Fråga 1 / 10</div>
+            <div class="timer" id="timer" aria-hidden="true"></div>
+          </div>
+
+          <div class="question" id="question">Laddar frågor...</div>
+
+          <div class="choices" id="choices" role="list"></div>
+
+          <div id="explainWrap" class="explanation" hidden></div>
+
+          <div class="buttons" id="controls">
+            <button id="nextBtn" class="secondary" disabled>Nästa</button>
+            <button id="showAnswers" class="secondary">Visa alla svar</button>
+            <button id="restartBtn" style="display:none">Gör om quizet</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="info" aria-labelledby="infoTitle">
+        <h3 id="infoTitle">Tips innan du börjar</h3>
+        <ul>
+          <li>Fotosyntes är hur växter gör mat med solljus.</li>
+          <li>Du behöver solljus, vatten och koldioxid.</li>
+          <li>Växterna ger oss syre — viktigt för oss!</li>
+        </ul>
+
+        <div style="margin-top:12px">
+          <strong>Poängräkning</strong>
+          <p style="margin:6px 0;color:var(--muted)">Rätt svar ger 1 poäng. Efter sista frågan visas din poäng och förklaringar.</p>
+        </div>
+
+        <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">
+          Tips: Testa att prata om svaren tillsammans — lärande blir roligare då!
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <div>Skapad för barn — enkel och trygg.</div>
+      <div><a class="small" href="#" id="aboutBtn">Om fotosyntes</a></div>
+    </footer>
+  </div>
+
+  <script>
+    // Quizdata (svenska, anpassat för 10-åringar)
+    const questions = [
+      {
+        q: "Vad behöver en växt för att göra fotosyntes?",
+        choices: ["Solen, vatten och koldioxid", "Bara jord", "Mjölk och socker"],
+        correct: 0,
+        explain: "Fotosyntes kräver solljus, vatten (från rötterna) och koldioxid (från luften)."
+      },
+      {
+        q: "Vad bildar växter som vi andas in?",
+        choices: ["Koldioxid", "Glas", "Syre"],
+        correct: 2,
+        explain: "Växter släpper ifrån sig syre som en biprodukt när de gör socker i fotosyntesen."
+      },
+      {
+        q: "Var i växten sitter ofta klorofyllet (det som fångar ljus)?",
+        choices: ["I rötterna", "I blommorna","I bladen"],
+        correct: 2,
+        explain: "Klorofyll finns framför allt i bladen där solljuset fångas."
+      },
+      {
+        q: "Vad använder växterna energin från solljuset till?",
+        choices: ["Att göra socker (mat) av vatten och koldioxid", "Att bygga hus", "Att gå på promenad"],
+        correct: 0,
+        explain: "De omvandlar energi till socker som fungerar som mat och byggmaterial för växten."
+      },
+      {
+        q: "Vilken gas tar växterna in för fotosyntesen?",
+        choices: ["Koldioxid", "Syre", "Väte"],
+        correct: 0,
+        explain: "Växter tar in koldioxid (CO₂) från luften för att göra socker."
+      },
+      {
+        q: "När gör växter mest fotosyntes?",
+        choices: ["På dagen när det är ljust", "På natten", "Bara när det regnar"],
+        correct: 0,
+        explain: "Fotosyntes behöver ljus, så det sker mest under dagen."
+      },
+      {
+        q: "Vad kallas de små delar i växtens celler där fotosyntesen sker?",
+        choices: ["Kloroplaster", "Mitokondrier", "Cellkärnor"],
+        correct: 0,
+        explain: "Kloroplasterna är cellernas 'solfångare' där klorofyll finns och fotosyntesen sker."
+      },
+      {
+        q: "Vilken färg har klorofyll, som hjälper växterna att fånga ljus?",
+        choices: ["Grön", "Blå", "Röd"],
+        correct: 0,
+        explain: "Klorofyll är grönt och därför är många blad gröna."
+      },
+      {
+        q: "Vad händer om en växt får för lite vatten?",
+        choices: ["Fotosyntesen minskar och växten kan sloka", "Fotosyntesen ökar", "Växten blir större direkt"],
+        correct: 0,
+        explain: "Vatten behövs för fotosyntesen; utan tillräckligt vatten minskar produktionen och växten blir svag."
+      },
+      {
+        q: "Varför är fotosyntes viktigt för djur och människor?",
+        choices: ["Den ger syre och mat som vi behöver", "Den gör växterna glada", "Den skapar stenar"],
+        correct: 0,
+        explain: "Fotosyntes ger syre att andas och producerar växternas mat som även djur och människor behöver."
+      }
+    ];
+
+    // State
+    let index = 0;
+    let score = 0;
+    let answered = false;
+
+    // Elements
+    const progressEl = document.getElementById('progress');
+    const questionEl = document.getElementById('question');
+    const choicesEl = document.getElementById('choices');
+    const explainWrap = document.getElementById('explainWrap');
+    const nextBtn = document.getElementById('nextBtn');
+    const showAnswers = document.getElementById('showAnswers');
+    const restartBtn = document.getElementById('restartBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const timerEl = document.getElementById('timer');
+
+    function startQuiz(){
+      index = 0;
+      score = 0;
+      answered = false;
+      restartBtn.style.display = 'none';
+      renderQuestion();
+      nextBtn.disabled = true;
+      explainWrap.hidden = true;
+      timerEl.textContent = '';
+    }
+
+    function renderQuestion(){
+      const item = questions[index];
+      progressEl.textContent = `Fråga ${index+1} / ${questions.length}`;
+      questionEl.textContent = item.q;
+      choicesEl.innerHTML = '';
+      explainWrap.hidden = true;
+      explainWrap.textContent = '';
+      answered = false;
+      nextBtn.disabled = true;
+
+      item.choices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.type = 'button';
+        btn.textContent = c;
+        btn.setAttribute('role','listitem');
+        btn.dataset.index = i;
+        btn.addEventListener('click', onChoice);
+        // keyboard accessibility
+        btn.addEventListener('keydown', (e) => {
+          if(e.key === 'Enter' || e.key === ' '){
+            e.preventDefault();
+            btn.click();
+          }
+        });
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    function onChoice(e){
+      if(answered) return;
+      answered = true;
+      const chosen = Number(e.currentTarget.dataset.index);
+      const item = questions[index];
+      // mark choices
+      const buttons = choicesEl.querySelectorAll('.choice');
+      buttons.forEach((b) => {
+        const i = Number(b.dataset.index);
+        if(i === item.correct){
+          b.classList.add('correct');
+          b.setAttribute('aria-label', b.textContent + ' — rätt svar');
+        }
+        if(i === chosen && i !== item.correct){
+          b.classList.add('wrong');
+          b.setAttribute('aria-label', b.textContent + ' — fel svar');
+        }
+        b.disabled = true;
+      });
+
+      if(chosen === item.correct){
+        score += 1;
+      }
+
+      explainWrap.textContent = item.explain;
+      explainWrap.hidden = false;
+      nextBtn.disabled = false;
+
+      // If last question, change Next to Se resultat
+      if(index === questions.length - 1){
+        nextBtn.textContent = 'Se resultat';
+      } else {
+        nextBtn.textContent = 'Nästa';
+      }
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if(!answered){
+        // safety: shouldn't happen because disabled
+        return;
+      }
+      if(index < questions.length - 1){
+        index++;
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    });
+
+    showAnswers.addEventListener('click', () => {
+      // show all questions + answers + förklaring in a new overlay-like view
+      showAllAnswers();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      startQuiz();
+    });
+
+    aboutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert("Fotosyntes = hur växter använder solljus för att göra socker + syre. Enkelt: solljus + vatten + koldioxid → socker (mat) + syre.");
+    });
+
+    function showResult(){
+      // replace quiz card with result summary
+      const card = document.getElementById('quizCard');
+      card.innerHTML = '';
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'result';
+      const title = document.createElement('h2');
+      title.textContent = 'Bra jobbat!';
+      const scoreEl = document.createElement('div');
+      scoreEl.className = 'score';
+      scoreEl.textContent = `${score} / ${questions.length} poäng`;
+      const msg = document.createElement('p');
+      msg.style.color = 'var(--muted)';
+      msg.textContent = getMessage(score);
+      const detailsBtn = document.createElement('button');
+      detailsBtn.textContent = 'Se alla frågor och förklaringar';
+      detailsBtn.addEventListener('click', showAllAnswers);
+
+      const againBtn = document.createElement('button');
+      againBtn.textContent = 'Gör om quizet';
+      againBtn.style.marginLeft = '8px';
+      againBtn.addEventListener('click', () => startQuiz());
+
+      resultDiv.appendChild(title);
+      resultDiv.appendChild(scoreEl);
+      resultDiv.appendChild(msg);
+      const wrap = document.createElement('div');
+      wrap.style.marginTop = '12px';
+      wrap.appendChild(detailsBtn);
+      wrap.appendChild(againBtn);
+      resultDiv.appendChild(wrap);
+      card.appendChild(resultDiv);
+      restartBtn.style.display = 'inline-block';
+    }
+
+    function getMessage(score){
+      const p = Math.round((score / questions.length) * 100);
+      if(p === 100) return 'Perfekt! Du kan fotosyntes riktigt bra.';
+      if(p >= 80) return 'Jättebra! Du har bra koll på fotosyntes.';
+      if(p >= 50) return 'Bra jobbat — lite mer träning så sitter det nog!';
+      return 'Bra försök! Läs förklaringarna och testa igen så lär du dig mer.';
+    }
+
+    function showAllAnswers(){
+      // build an accessible list view of all Q/A
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(0,0,0,0.4)';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.padding = '20px';
+      overlay.style.zIndex = 9999;
+
+      const box = document.createElement('div');
+      box.style.maxWidth = '900px';
+      box.style.width = '100%';
+      box.style.maxHeight = '90vh';
+      box.style.overflow = 'auto';
+      box.style.background = 'white';
+      box.style.borderRadius = '12px';
+      box.style.padding = '18px';
+      box.style.boxShadow = '0 8px 40px rgba(0,0,0,0.25)';
+
+      const h = document.createElement('h2');
+      h.textContent = 'Frågor och förklaringar';
+      box.appendChild(h);
+
+      questions.forEach((it, idx) => {
+        const qwrap = document.createElement('div');
+        qwrap.style.margin = '12px 0';
+        const qh = document.createElement('div');
+        qh.style.fontWeight = '700';
+        qh.textContent = `${idx+1}. ${it.q}`;
+        qwrap.appendChild(qh);
+        const correct = document.createElement('div');
+        correct.style.marginTop = '6px';
+        correct.innerHTML = `<strong>Rätt svar:</strong> ${it.choices[it.correct]}`;
+        qwrap.appendChild(correct);
+        const ex = document.createElement('div');
+        ex.style.marginTop = '6px';
+        ex.style.color = 'var(--muted)';
+        ex.textContent = it.explain;
+        qwrap.appendChild(ex);
+        box.appendChild(qwrap);
+      });
+
+      const close = document.createElement('button');
+      close.textContent = 'Stäng';
+      close.style.marginTop = '10px';
+      close.addEventListener('click', () => document.body.removeChild(overlay));
+      box.appendChild(close);
+
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    }
+
+    // Start immediately
+    startQuiz();
+
+    // Optional: small accessibility enhancement - focus first choice when a question loads
+    const observer = new MutationObserver(() => {
+      const first = choicesEl.querySelector('.choice');
+      if(first) first.focus();
+    });
+    observer.observe(choicesEl, {childList:true});
+
+  </script>
+</body>
+</html>
