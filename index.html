@@ -67,6 +67,27 @@
       display: none; /* Dölj som standard på mobil */
     }
 
+    /* ********** KIRURGISK PRECISION: NY CSS-KLASS FÖR MOBILMENY ********** */
+    .nav-links.is-active {
+      display: flex;
+      flex-direction: column; /* Länkarna staplas vertikalt */
+      width: 100%;
+      position: absolute; /* Placera menyn över innehållet */
+      top: 60px; /* Beror på nav-bar höjd (ca 16px top + ca 28px content + 16px bottom) */
+      left: 0;
+      padding: 16px 16px;
+      background: var(--bg); /* Använd bakgrundsfärg för att täcka innehållet under */
+      border-top: 1px solid var(--ring);
+      z-index: 10;
+    }
+    
+    .nav-links.is-active a {
+      padding: 12px 16px;
+      width: 100%;
+      border-bottom: 1px solid var(--card); /* Separera länkarna */
+    }
+    /* ******************************************************************** */
+
     .nav-links a {
       text-decoration: none;
       color: var(--fg);
@@ -86,6 +107,9 @@
       height: 20px;
       position: relative;
       cursor: pointer;
+      border: none;
+      background: transparent;
+      padding: 0;
     }
 
     .menu-icon span {
@@ -243,7 +267,28 @@
 
 <script src="assets/app.js" defer></script>
 
-  <script type="application/ld+json">
+<script>
+  // Funktion för att hantera mobilmenyn
+  function setupMobileMenu() {
+    const menuButton = document.querySelector('.menu-icon');
+    const navLinks = document.getElementById('nav-menu');
+
+    if (menuButton && navLinks) {
+      menuButton.addEventListener('click', () => {
+        // Växlar CSS-klassen som gör menyn synlig/dold
+        navLinks.classList.toggle('is-active');
+        
+        // Uppdaterar ARIA-status (tillgänglighet)
+        const isExpanded = menuButton.getAttribute('aria-expanded') === 'true' || false;
+        menuButton.setAttribute('aria-expanded', !isExpanded);
+      });
+    }
+  }
+
+  // Kör funktionen när DOM är laddad
+  document.addEventListener('DOMContentLoaded', setupMobileMenu);
+</script>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
