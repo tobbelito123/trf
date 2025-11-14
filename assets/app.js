@@ -11,6 +11,11 @@ let view  = [];
 let activeCity = 'ALLA';
 let activeCpv  = 'ALL';
 
+// ********** NYTT TILLSTÅND FÖR "LADDA FLER" **********
+const ITEMS_PER_LOAD = 50; // Antal kort som visas per laddning
+let loadedCount = ITEMS_PER_LOAD; // Börja med att visa en full laddning
+// *******************************************************
+
 
 function fmtDate(pd) {
   if (!pd) return "okänt datum";
@@ -21,8 +26,8 @@ function fmtDate(pd) {
 // ADD: normalize PD → milliseconds (handles "YYYY-MM-DD+HH:MM" too)
 function pdToMillis(pd){
   if (!pd) return 0;
-  if (/^\d{4}-\d{2}-\d{2}T/.test(pd)) return Date.parse(pd);                 // ISO
-  if (/^\d{4}-\d{2}-\d{2}\+\d{2}:\d{2}$/.test(pd)) {                         // "2025-07-08+02:00"
+  if (/^\d{4}-\d{2}-\d{2}T/.test(pd)) return Date.parse(pd);             // ISO
+  if (/^\d{4}-\d{2}-\d{2}\+\d{2}:\d{2}$/.test(pd)) {                    // "2025-07-08+02:00"
     const [d, off] = pd.split('+');
     return Date.parse(`${d}T00:00:00+${off}`);
   }
@@ -30,11 +35,11 @@ function pdToMillis(pd){
   const t = Date.parse(pd);
   return isNaN(t) ? 0 : t;
 }
- function escapeHtml(s){
+  function escapeHtml(s){
   return (s||"").replace(/[&<>"]/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
   }[c]));
-}            
+}        
 
 // Hämta länkar: försök från 'links', annars bygg från ND (svenska versionen)
 function pickLinks(n) {
@@ -151,12 +156,24 @@ function applyFilters() {
 );
 }
 
-function render() {
+function render(resetLoadedCount = true) { // ********** Lade till flagga **********
   applyFilters();
   view.sort((a, b) => pdToMillis(b.pd) - pdToMillis(a.pd));
-  countEl.textContent = `${view.length} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
+  
+  // ********** Återställ räknaren vid ny filtrering **********
+  if (resetLoadedCount) {
+    loadedCount = ITEMS_PER_LOAD;
+  }
+  
+  const totalInView = view.length;
+  const itemsToRender = view.slice(0, loadedCount); // Begränsa antalet som ritas
+  // ************************************************************
+
+  countEl.textContent = `${totalInView} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
   listEl.innerHTML = "";
-  for (const n of view) {
+  
+  // RENDER: Loopar bara igenom de objekt som ska visas (itemsToRender)
+  for (const n of itemsToRender) {
     const amountHtml = n.amount
       ? (n.ccy === 'SEK'
           ? `<span class="amount">${fmtSEK(n.amount)}</span>`
@@ -180,14 +197,50 @@ function render() {
       </div>
       <div class="links">
         ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
-       ${n.document_url ? `<a href="${n.document_url}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
-${n.submission_url ? `<a href="${n.submission_url}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
+        ${n.document_url ? `<a href="${n.document_url}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
+        ${n.submission_url ? `<a href="${n.submission_url}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
       </div>
     `;
     listEl.appendChild(card);
   }
+  
+  // ********** Lägg till "Ladda fler"-knapp **********
+  if (totalInView > loadedCount) {
+    const remaining = totalInView - loadedCount;
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.id = 'load-more-btn';
+    // Lägg till inline-stil för att matcha din designfilosofi
+    loadMoreBtn.style.cssText = `
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--link);
+      background: var(--chip);
+      color: var(--chip-fg);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+    `;
+    loadMoreBtn.textContent = `Ladda fler (${remaining} kvar)`;
+    loadMoreBtn.addEventListener('click', loadMore);
+    listEl.appendChild(loadMoreBtn);
+  }
+  // ******************************************************
+  
   updateItemListSchema();
 }
+
+// ********** NY FUNKTION FÖR ATT LADDA FLER **********
+function loadMore() {
+  // Öka antalet visade kort med ITEMS_PER_LOAD
+  loadedCount += ITEMS_PER_LOAD; 
+  // Återrita vyn utan att nollställa loadedCount (skickar 'false')
+  render(false);
+}
+// ******************************************************
+
 
 async function init() {
   try {
@@ -207,51 +260,51 @@ async function init() {
       const { html_url, pdf_url } = pickLinks(n);
       const amt = pickAmount(n);
       // --- CPV: normalisera till tvåsiffrig sektorkod (”division”), ex "45", "72"
-const rawCpv = n["classification-cpv"] || n["main-classification-lot"] || null;
-// rawCpv kan vara string eller array
-const cpvList = Array.isArray(rawCpv) ? rawCpv : (typeof rawCpv === 'string' ? [rawCpv] : []);
-const cpv2 = cpvList
-  .map(c => (c || '').toString().replace(/\D/g,''))
-  .filter(Boolean)
-  .map(c => c.slice(0,2)); // två första siffrorna
+      const rawCpv = n["classification-cpv"] || n["main-classification-lot"] || null;
+      // rawCpv kan vara string eller array
+      const cpvList = Array.isArray(rawCpv) ? rawCpv : (typeof rawCpv === 'string' ? [rawCpv] : []);
+      const cpv2 = cpvList
+        .map(c => (c || '').toString().replace(/\D/g,''))
+        .filter(Boolean)
+        .map(c => c.slice(0,2)); // två första siffrorna
       return {
         title: anyTitle,
         has_sv: !!titleSv,
         pd: n.PD || n.pd || "",
         nd: n.ND || n.nd || "",
         city: (() => {
-  const raw = n["buyer-city"] || n["buyer_city"] || null;
-  if (!raw) return null;
-  if (typeof raw === 'string') return raw;
-  if (Array.isArray(raw)) return raw[0] || null;
-  if (typeof raw === 'object') {
-    // ta första språk-nyckeln och första värdet
-    const firstKey = Object.keys(raw)[0];
-    const val = raw[firstKey];
-    if (typeof val === 'string') return val;
-    if (Array.isArray(val)) return val[0] || null;
-  }
-  return null;
-})(),
+          const raw = n["buyer-city"] || n["buyer_city"] || null;
+          if (!raw) return null;
+          if (typeof raw === 'string') return raw;
+          if (Array.isArray(raw)) return raw[0] || null;
+          if (typeof raw === 'object') {
+            // ta första språk-nyckeln och första värdet
+            const firstKey = Object.keys(raw)[0];
+            const val = raw[firstKey];
+            if (typeof val === 'string') return val;
+            if (Array.isArray(val)) return val[0] || null;
+          }
+          return null;
+        })(),
         buyer: (() => {
-        const raw = n["organisation-name-buyer"];
-        if (!raw) return null;
-        if (typeof raw === 'string') return raw;
-        if (Array.isArray(raw)) return raw[0] || null;
-        if (typeof raw === 'object') {
-          const firstKey = Object.keys(raw)[0];
-          const val = raw[firstKey];
-          if (typeof val === 'string') return val;
-         if (Array.isArray(val)) return val[0] || null;
-      }
-       return null;
-    })(),
+          const raw = n["organisation-name-buyer"];
+          if (!raw) return null;
+          if (typeof raw === 'string') return raw;
+          if (Array.isArray(raw)) return raw[0] || null;
+          if (typeof raw === 'object') {
+            const firstKey = Object.keys(raw)[0];
+            const val = raw[firstKey];
+            if (typeof val === 'string') return val;
+            if (Array.isArray(val)) return val[0] || null;
+          }
+          return null;
+        })(),
         html_url, pdf_url,
         document_url: firstString(n['document-url-lot']),
-submission_url: firstString(n['submission-url-lot']),
+        submission_url: firstString(n['submission-url-lot']),
         amount: amt?.amount || null,
         ccy: amt?.ccy || null,
-      
+        
         deadline: pickDeadline(n),
         cpv2
       };
@@ -265,8 +318,9 @@ submission_url: firstString(n['submission-url-lot']),
 }
 
 // UI handlers
-onlySvEl.addEventListener('change', render);
-qEl.addEventListener('input', render);
+// ********** Ändrade alla event listeners att anropa render() UTAN argument **********
+onlySvEl.addEventListener('change', () => render()); 
+qEl.addEventListener('input', () => render()); 
 cpvEl.addEventListener('change', () => {
   activeCpv = cpvEl.value || 'ALL';
   render();
