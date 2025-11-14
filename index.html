@@ -3,25 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Offentlig upphandling i Sverige – aktuella anbud (TED) | vembudar.se</title>
-  <meta name="description" content="Vembudar.se listar aktuella offentliga upphandlingar i Sverige – filtrera på stad, se sista svarsdag och ladda ner underlag (PDF). Uppdateras dagligen.">
+  <title>Hitta Offentliga Upphandlingar & Anbud i Sverige (TED) | vembudar.se</title>
+  <meta name="description" content="Gratis bevakning av alla aktuella offentliga upphandlingar i Sverige. Filtrera anbud efter stad, CPV-kod och ladda ner underlag (PDF). Dagligen uppdaterat." />
   <link rel="canonical" href="https://vembudar.se/">
   <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
   <meta name="language" content="sv">
   <meta name="color-scheme" content="light dark">
 
-  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="vembudar.se">
-  <meta property="og:title" content="Offentlig upphandling i Sverige – aktuella anbud (TED)">
-  <meta property="og:description" content="Filtrera på stad, se sista svarsdag och ladda ner underlag. Uppdateras dagligen.">
+  <meta property="og:title" content="Hitta Offentliga Upphandlingar & Anbud i Sverige (TED)">
+  <meta property="og:description" content="Filtrera på stad, se sista svarsdag och ladda ner underlag. Uppdateras dagligen." />
   <meta property="og:url" content="https://vembudar.se/">
   <meta property="og:image" content="https://vembudar.se/assets/og-default.jpg">
 
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Offentlig upphandling i Sverige – aktuella anbud (TED)">
-  <meta name="twitter:description" content="Filtrera på stad, se sista svarsdag och ladda ner underlag. Uppdateras dagligen.">
+  <meta name="twitter:title" content="Hitta Offentliga Upphandlingar & Anbud i Sverige (TED)">
+  <meta name="twitter:description" content="Filtrera på stad, se sista svarsdag och ladda ner underlag. Uppdateras dagligen." />
   <meta name="twitter:image" content="https://vembudar.se/assets/og-default.jpg">
 
 
@@ -29,16 +27,34 @@
     :root{
       --fg:#0b1320; --bg:#fff; --muted:#657189; --card:#f6f7fb; --ring:#dfe7ff; --link:#1a73e8;
       --chip:#e8eefc; --chip-fg:#194fb0; --accent:#111827;
+      /* Ny färg för att framhäva nyckelord */
+      --key-highlight:#0f49a8;
     }
     @media (prefers-color-scheme:dark){
-      :root{ --fg:#e8ecf7; --bg:#0b0f17; --muted:#9aa4b5; --card:#121828; --ring:#1e2b47; --link:#76a7ff; --chip:#15213a; --chip-fg:#a8c4ff; --accent:#eef2ff; }
+      :root{ 
+        --fg:#e8ecf7; --bg:#0b0f17; --muted:#9aa4b5; --card:#121828; --ring:#1e2b47; --link:#76a7ff; 
+        --chip:#15213a; --chip-fg:#a8c4ff; --accent:#eef2ff; 
+        --key-highlight:#a8c4ff; /* Ljusare för mörkt läge */
+      }
     }
     *{ box-sizing:border-box }
     body{ margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif; color:var(--fg); background:var(--bg); }
     header,main,footer{ max-width:980px; margin:0 auto; padding:0 16px }
-    header{ padding:32px 16px 8px }
-    h1{ font-size:clamp(28px,4.4vw,44px); line-height:1.15; margin:0 0 6px }
-    p.lead{ margin:.25rem 0 0; color:var(--muted) }
+    
+    /* Ny Hero-sektion för det visuella introt */
+    .hero {
+      padding: 32px 0 16px;
+      text-align: center; /* Centrera text på mobil */
+    }
+
+    h1{ font-size:clamp(30px,5vw,44px); line-height:1.1; margin:0 0 10px }
+    p.lead{ margin:.5rem 0 0; color:var(--muted); font-size:1.15rem; }
+    
+    /* Stil för att framhäva nyckelord */
+    .lead strong {
+      color: var(--key-highlight);
+      font-weight: 700;
+    }
 
     .toolbar{ display:flex; flex-wrap:wrap; gap:.6rem .8rem; align-items:center; margin:18px 0 12px; color:var(--muted) }
     .chips{ display:flex; gap:.5rem; flex-wrap:wrap }
@@ -73,20 +89,21 @@
 </head>
 <body>
   <header>
-    <h1>Aktuella upphandlingar – Sverige (TED)</h1>
-<p class="lead">
-  Sök och filtrera <strong>offentliga upphandlingar</strong> i Sverige. Vi hämtar löpande anbud från
-  <abbr title="Tenders Electronic Daily">TED</abbr> och visar <strong>sista svarsdag</strong>, ort och underlag (PDF).
-  Uppdateras dagligen för företag som vill bevaka <strong>offentlig upphandling</strong>.
-</p>
+    <div class="hero">
+      <h1>Hitta Aktuella Offentliga Upphandlingar i Sverige</h1>
+      <p class="lead">
+        Sök och filtrera bland alla **offentliga anbud** (TED) i Sverige, helt **gratis**.
+        Vi visar **sista svarsdag**, ort och underlag (PDF). Dagligen uppdaterat för företag.
+      </p>
+    </div>
   </header>
 
-  <main>
+  <main role="region" aria-label="Sökresultat för offentliga upphandlingar">
     <div class="toolbar">
       <span id="count" class="muted">Laddar…</span>
       <span id="updated" class="muted" style="margin-left:.6rem"></span>
     </div>
-
+    
     <div class="toolbar">
       <div class="chips" role="tablist" aria-label="Snabbfilter stad">
         <button class="chip" id="chip-all" aria-pressed="true" data-city="ALLA">Alla</button>
