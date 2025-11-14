@@ -27,30 +27,113 @@
     :root{
       --fg:#0b1320; --bg:#fff; --muted:#657189; --card:#f6f7fb; --ring:#dfe7ff; --link:#1a73e8;
       --chip:#e8eefc; --chip-fg:#194fb0; --accent:#111827;
-      /* Ny färg för att framhäva nyckelord */
       --key-highlight:#0f49a8;
     }
     @media (prefers-color-scheme:dark){
       :root{ 
         --fg:#e8ecf7; --bg:#0b0f17; --muted:#9aa4b5; --card:#121828; --ring:#1e2b47; --link:#76a7ff; 
         --chip:#15213a; --chip-fg:#a8c4ff; --accent:#eef2ff; 
-        --key-highlight:#a8c4ff; /* Ljusare för mörkt läge */
+        --key-highlight:#a8c4ff; 
       }
     }
     *{ box-sizing:border-box }
     body{ margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif; color:var(--fg); background:var(--bg); }
-    header,main,footer{ max-width:980px; margin:0 auto; padding:0 16px }
     
-    /* Ny Hero-sektion för det visuella introt */
+    /* Header/Navigation Layout */
+    .header-content {
+      max-width:980px; margin:0 auto; padding:0 16px;
+    }
+    
+    header { 
+      padding:16px 0 0; 
+      border-bottom: 1px solid var(--ring); 
+    }
+    
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+    }
+    
+    .logo a {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: none; /* Dölj som standard på mobil */
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--fg);
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--card);
+    }
+    
+    /* Hamburgarmeny-ikon (endast CSS) */
+    .menu-icon {
+      display: block;
+      width: 28px;
+      height: 20px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .menu-icon span {
+      display: block;
+      height: 2px;
+      background: var(--fg);
+      position: absolute;
+      width: 100%;
+      left: 0;
+      transition: all 0.2s ease-in-out;
+    }
+    .menu-icon span:nth-child(1) { top: 0px; }
+    .menu-icon span:nth-child(2) { top: 9px; }
+    .menu-icon span:nth-child(3) { top: 18px; }
+
+    /* Stilar för större skärmar (Desktop) */
+    @media (min-width: 768px) {
+      .menu-icon {
+        display: none; /* Dölj hamburgare på desktop */
+      }
+      .nav-links {
+        display: flex; /* Visa meny som rad på desktop */
+        gap: 1rem;
+      }
+      header {
+        padding-top: 32px; /* Återställ paddingen */
+        border-bottom: none;
+      }
+      .nav-bar {
+        padding-bottom: 24px;
+      }
+      .hero {
+        padding: 0 0 16px; /* Justera padding efter flytt */
+      }
+    }
+
+
+    /* Hero-sektionen från förra steget */
+    main,footer{ max-width:980px; margin:0 auto; padding:0 16px }
+    
     .hero {
-      padding: 32px 0 16px;
-      text-align: center; /* Centrera text på mobil */
+      padding: 24px 0 16px;
+      text-align: center; 
     }
 
     h1{ font-size:clamp(30px,5vw,44px); line-height:1.1; margin:0 0 10px }
     p.lead{ margin:.5rem 0 0; color:var(--muted); font-size:1.15rem; }
     
-    /* Stil för att framhäva nyckelord */
     .lead strong {
       color: var(--key-highlight);
       font-weight: 700;
@@ -89,12 +172,34 @@
 </head>
 <body>
   <header>
-    <div class="hero">
-      <h1>Hitta Aktuella Offentliga Upphandlingar i Sverige</h1>
-      <p class="lead">
-        Sök och filtrera bland alla **offentliga anbud** (TED) i Sverige, helt **gratis**.
-        Vi visar **sista svarsdag**, ort och underlag (PDF). Dagligen uppdaterat för företag.
-      </p>
+    <div class="header-content">
+      <nav class="nav-bar" aria-label="Huvudnavigering">
+        <div class="logo">
+          <a href="/">vembudar.se</a>
+        </div>
+
+        <button class="menu-icon" aria-expanded="false" aria-controls="nav-menu" aria-label="Öppna meny">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links" id="nav-menu">
+          <a href="/" aria-current="page">Upphandlingar</a>
+          <a href="/kunskap">Kunskap & Blogg</a>
+          <a href="/kontakt">Kontakt</a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="header-content">
+      <div class="hero">
+        <h1>Hitta Aktuella Offentliga Upphandlingar i Sverige</h1>
+        <p class="lead">
+          Sök och filtrera bland alla <strong>offentliga anbud</strong> (TED) i Sverige, helt <strong>gratis</strong>.
+          Vi visar <strong>sista svarsdag</strong>, ort och underlag (PDF). Dagligen uppdaterat för företag.
+        </p>
+      </div>
     </div>
   </header>
 
@@ -103,7 +208,7 @@
       <span id="count" class="muted">Laddar…</span>
       <span id="updated" class="muted" style="margin-left:.6rem"></span>
     </div>
-    
+
     <div class="toolbar">
       <div class="chips" role="tablist" aria-label="Snabbfilter stad">
         <button class="chip" id="chip-all" aria-pressed="true" data-city="ALLA">Alla</button>
