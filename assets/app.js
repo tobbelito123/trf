@@ -5,11 +5,16 @@ const onlySvEl = document.getElementById('onlySv');
 const qEl      = document.getElementById('q');
 const pills    = Array.from(document.querySelectorAll('.chip'));
 const cpvEl    = document.getElementById('cpvFilter');
+const sortEl   = document.getElementById('sortOrder');
+const resetBtn = document.getElementById('resetFilters');
+const emptyEl  = document.getElementById('emptyState');
+const emptyResetBtn = document.getElementById('emptyReset');
 
 let items = [];
 let view  = [];
 let activeCity = 'ALLA';
 let activeCpv  = 'ALL';
+let sortMode   = 'published';
 
 // ********** NYTT TILLSTÅND FÖR "LADDA FLER" **********
 const ITEMS_PER_LOAD = 50; // Antal kort som visas per laddning
@@ -35,11 +40,18 @@ function pdToMillis(pd){
   const t = Date.parse(pd);
   return isNaN(t) ? 0 : t;
 }
+// Deadline-strängar kan se ut som "2026-05-15 00:00:00+02:00" eller sakna tid helt.
+// Saknad deadline sorteras sist när vi sorterar "snarast först".
+function deadlineToMillis(dl){
+  if (!dl) return Infinity;
+  const t = Date.parse(dl.replace(' ', 'T'));
+  return isNaN(t) ? Infinity : t;
+}
   function escapeHtml(s){
   return (s||"").replace(/[&<>"]/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
   }[c]));
-}        
+}
 
 // Hämta länkar: försök från 'links', annars bygg från ND (svenska versionen)
 function pickLinks(n) {
@@ -77,7 +89,7 @@ function pickAmount(n) {
     return typeof x === 'string' ? x.toUpperCase() : null;
   };
 
-  
+
 
   const tv  = n["total-value"];
   const tvc = normCcy(n["total-value-cur"]);
@@ -146,8 +158,8 @@ function fmtSEK(x) {
 }
 
 function applyFilters() {
-  const onlySv = onlySvEl.checked;
-  const q = (qEl.value || "").trim().toLowerCase();
+  const onlySv = !!(onlySvEl && onlySvEl.checked);
+  const q = ((qEl && qEl.value) || "").trim().toLowerCase();
   view = items.filter(x =>
   (!onlySv || x.has_sv) &&
   (activeCity === 'ALLA' || (x.city || '').toLowerCase() === activeCity.toLowerCase()) &&
@@ -158,20 +170,27 @@ function applyFilters() {
 
 function render(resetLoadedCount = true) { // ********** Lade till flagga **********
   applyFilters();
-  view.sort((a, b) => pdToMillis(b.pd) - pdToMillis(a.pd));
-  
+
+  if (sortMode === 'deadline') {
+    view.sort((a, b) => deadlineToMillis(a.deadline) - deadlineToMillis(b.deadline));
+  } else {
+    view.sort((a, b) => pdToMillis(b.pd) - pdToMillis(a.pd));
+  }
+
   // ********** Återställ räknaren vid ny filtrering **********
   if (resetLoadedCount) {
     loadedCount = ITEMS_PER_LOAD;
   }
-  
+
   const totalInView = view.length;
   const itemsToRender = view.slice(0, loadedCount); // Begränsa antalet som ritas
   // ************************************************************
 
-  countEl.textContent = `${totalInView} upphandlingar ${onlySvEl.checked ? "(svensk titel)" : ""}`;
+  countEl.textContent = `${totalInView} upphandlingar ${onlySvEl && onlySvEl.checked ? "(svensk titel)" : ""}`;
   listEl.innerHTML = "";
-  
+
+  if (emptyEl) emptyEl.style.display = totalInView === 0 ? "" : "none";
+
   // RENDER: Loopar bara igenom de objekt som ska visas (itemsToRender)
   for (const n of itemsToRender) {
     const amountHtml = n.amount
@@ -203,7 +222,7 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
     `;
     listEl.appendChild(card);
   }
-  
+
   // ********** Lägg till "Ladda fler"-knapp **********
   if (totalInView > loadedCount) {
     const remaining = totalInView - loadedCount;
@@ -228,18 +247,30 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
     listEl.appendChild(loadMoreBtn);
   }
   // ******************************************************
-  
+
   updateItemListSchema();
 }
 
 // ********** NY FUNKTION FÖR ATT LADDA FLER **********
 function loadMore() {
   // Öka antalet visade kort med ITEMS_PER_LOAD
-  loadedCount += ITEMS_PER_LOAD; 
+  loadedCount += ITEMS_PER_LOAD;
   // Återrita vyn utan att nollställa loadedCount (skickar 'false')
   render(false);
 }
 // ******************************************************
+
+function resetFilters() {
+  activeCity = 'ALLA';
+  activeCpv = 'ALL';
+  sortMode = 'published';
+  if (qEl) qEl.value = '';
+  if (onlySvEl) onlySvEl.checked = false;
+  if (cpvEl) cpvEl.value = 'ALL';
+  if (sortEl) sortEl.value = 'published';
+  pills.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.city === 'ALLA')));
+  render();
+}
 
 
 async function init() {
@@ -304,7 +335,7 @@ async function init() {
         submission_url: firstString(n['submission-url-lot']),
         amount: amt?.amount || null,
         ccy: amt?.ccy || null,
-        
+
         deadline: pickDeadline(n),
         cpv2
       };
@@ -317,21 +348,26 @@ async function init() {
   }
 }
 
-// UI handlers
-// ********** Ändrade alla event listeners att anropa render() UTAN argument **********
-onlySvEl.addEventListener('change', () => render()); 
-qEl.addEventListener('input', () => render()); 
-cpvEl.addEventListener('change', () => {
+// UI handlers – körs bara om respektive element finns på sidan (app.js laddas även på icke-listsidor)
+if (onlySvEl) onlySvEl.addEventListener('change', () => render());
+if (qEl) qEl.addEventListener('input', () => render());
+if (cpvEl) cpvEl.addEventListener('change', () => {
   activeCpv = cpvEl.value || 'ALL';
   render();
 });
+if (sortEl) sortEl.addEventListener('change', () => {
+  sortMode = sortEl.value || 'published';
+  render();
+});
+if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+if (emptyResetBtn) emptyResetBtn.addEventListener('click', resetFilters);
 pills.forEach(btn => btn.addEventListener('click', () => {
   pills.forEach(b => b.setAttribute('aria-pressed', 'false'));
   btn.setAttribute('aria-pressed', 'true');
   activeCity = btn.dataset.city || 'ALLA';
   render();
 }));
-init();
+if (listEl) init();
 
 function updateItemListSchema() {
   try {

@@ -228,6 +228,15 @@
     footer{ color:var(--muted); font-size:.95rem; padding:22px 16px 40px; border-top:1px dotted var(--ring) }
     a{ color:var(--link) }
     .muted{ color:var(--muted) }
+    .footer-grid{ display:grid; grid-template-columns:1fr; gap:20px; margin:20px 0 }
+    @media (min-width:640px){ .footer-grid{ grid-template-columns:2fr 1fr 1fr } }
+    .footer-col strong{ color:var(--fg) }
+    .footer-col ul{ list-style:none; padding:0; margin:.5rem 0 0 }
+    .footer-col li{ margin:.3rem 0 }
+    .footer-bottom{ border-top:1px dotted var(--ring); padding-top:14px }
+
+    .trust-box{ max-width:640px; margin:36px auto 0; padding:16px 18px; background:var(--card); border:1px solid var(--ring); border-radius:12px; font-size:.92rem; color:var(--muted) }
+    .trust-box strong{ color:var(--fg) }
   </style>
 </head>
 <body>
@@ -246,7 +255,10 @@
 
         <div class="nav-links" id="nav-menu">
           <a href="/">Upphandlingar</a>
-          <a href="/kunskap">Kunskap & Blogg</a>
+          <a href="/jamfor-upphandlingstjanster.html">Jämförelser</a>
+          <a href="/ordlista.html">Ordlista</a>
+          <a href="/faq.html">FAQ</a>
+          <a href="/kunskap.html">Kunskap</a>
           <a href="/kontakt.html" aria-current="page">Kontakt</a>
         </div>
       </nav>
@@ -274,10 +286,36 @@
 
     </div>
 
+    <div class="trust-box">
+      <strong>Om vembudar.se och våra källor.</strong> Vi listar upphandlingar som hämtas automatiskt, en gång per dygn, direkt från TED (Tenders Electronic Daily), EU:s officiella annonsdatabas. Vi varken redigerar eller kompletterar innehållet i annonserna. vembudar.se är en oberoende tjänst, inte anslutet till EU, TED eller Upphandlingsmyndigheten. Läs mer i vår <a href="/faq.html">FAQ</a> eller se hur vi <a href="/jamfor-upphandlingstjanster.html">jämförs med andra tjänster</a>.
+    </div>
+
   </main>
 
   <footer>
-    Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>.
+    <div class="footer-grid">
+      <div class="footer-col">
+        <strong>vembudar.se</strong>
+        <p class="muted">Gratis bevakning av offentliga upphandlingar i Sverige, byggt på TED. Uppdateras dagligen.</p>
+      </div>
+      <div class="footer-col">
+        <strong>Resurser</strong>
+        <ul>
+          <li><a href="/kunskap.html">Kunskap & guider</a></li>
+          <li><a href="/ordlista.html">Ordlista</a></li>
+          <li><a href="/jamfor-upphandlingstjanster.html">Jämför tjänster</a></li>
+          <li><a href="/faq.html">Vanliga frågor</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <strong>Kontakt</strong>
+        <ul>
+          <li><a href="/kontakt.html">Kontakta oss</a></li>
+          <li><a href="mailto:info@vembudar.se">info@vembudar.se</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted footer-bottom">Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>, Upphandlingsmyndigheten. vembudar.se är en oberoende tjänst och är inte anslutet till EU, TED eller Upphandlingsmyndigheten.</p>
   </footer>
 
 <script src="assets/app.js" defer></script>

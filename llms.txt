@@ -1,0 +1,39 @@
+# vembudar.se
+
+> Gratis, oberoende tjänst som listar aktuella offentliga upphandlingar (anbud) i Sverige, hämtade från TED (EU:s officiella upphandlingsdatabas).
+
+## Vad tjänsten gör
+
+vembudar.se hämtar upphandlingsannonser från TED (Tenders Electronic Daily), EU:s centrala databas för offentliga upphandlingar över EU:s tröskelvärden, och gör dem sökbara utan konto eller inloggning. Besökare kan filtrera på ort (Göteborg, Stockholm, Malmö), bransch (CPV-kod) och fritext, se sista svarsdag och belopp, och länka direkt vidare till underlag (PDF) och anbudsportal.
+
+## Datakälla och uppdatering
+
+Data hämtas automatiskt en gång per dygn direkt från TED:s API. Innehållet i varje annons kommer oförändrat från TED, vembudar.se redigerar eller kompletterar inte texten.
+
+## Vad tjänsten INTE täcker
+
+- Direktupphandlingar och affärer under EU:s tröskelvärde, eftersom dessa sällan annonseras på TED.
+- Orter utanför Göteborg, Stockholm och Malmö (fler orter planeras).
+- E-postbevakning eller notiser (planerad funktion, finns inte idag).
+
+För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekommenderas betaltjänster som Mercell/Opic, e-Avrop med Pabliq, eller Kommers Annons. Se /jamfor-upphandlingstjanster.html för en jämförelse.
+
+## Innehåll på siten
+
+- `/` - lista över aktuella upphandlingar, med filter på ort, CPV-kod och fritext
+- `/kunskap.html` - guide till offentlig upphandling och LOU
+- `/ordlista.html` - ordlista med centrala begrepp inom offentlig upphandling
+- `/cpv-koder.html` - fördjupning om CPV-koder
+- `/direktupphandling.html` - fördjupning om direktupphandling och gränsvärden
+- `/ramavtal.html` - fördjupning om ramavtal och avrop
+- `/jamfor-upphandlingstjanster.html` - jämförelse mot Mercell/Opic, e-Avrop/Pabliq och Kommers Annons
+- `/faq.html` - vanliga frågor om tjänsten och om offentlig upphandling
+- `/kontakt.html` - kontaktuppgifter
+
+## Oberoende
+
+vembudar.se är inte anslutet till, sponsrat av eller ett ombud för EU, TED, Upphandlingsmyndigheten, Mercell, Opic, e-Avrop, Pabliq, Visma eller Kommers Annons.
+
+## Kontakt
+
+E-post: info@vembudar.se
