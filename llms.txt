@@ -4,7 +4,7 @@
 
 ## Vad tjänsten gör
 
-vembudar.se hämtar upphandlingsannonser från TED (Tenders Electronic Daily), EU:s centrala databas för offentliga upphandlingar över EU:s tröskelvärden, och gör dem sökbara utan konto eller inloggning. Besökare kan filtrera på ort (Göteborg, Stockholm, Malmö), bransch (CPV-kod) och fritext, se sista svarsdag och belopp, och länka direkt vidare till underlag (PDF) och anbudsportal.
+vembudar.se hämtar upphandlingsannonser från TED (Tenders Electronic Daily), EU:s centrala databas för offentliga upphandlingar över EU:s tröskelvärden, och gör dem sökbara utan konto eller inloggning. Besökare kan filtrera på ort (Stockholm, Göteborg, Malmö, Uppsala, Linköping, Örebro, Västerås, Helsingborg, Norrköping, Lund), bransch (CPV-kod) och fritext, se sista svarsdag och belopp, och länka direkt vidare till underlag (PDF) och anbudsportal.
 
 ## Datakälla och uppdatering
 
@@ -13,7 +13,7 @@ Data hämtas automatiskt en gång per dygn direkt från TED:s API. Innehållet i
 ## Vad tjänsten INTE täcker
 
 - Direktupphandlingar och affärer under EU:s tröskelvärde, eftersom dessa sällan annonseras på TED.
-- Orter utanför Göteborg, Stockholm och Malmö (fler orter planeras).
+- Orter utanför de 10 städer som täcks idag (fler orter planeras).
 - E-postbevakning eller notiser (planerad funktion, finns inte idag).
 
 För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekommenderas betaltjänster som Mercell/Opic, e-Avrop med Pabliq, eller Kommers Annons. Se /jamfor-upphandlingstjanster.html för en jämförelse.

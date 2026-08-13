@@ -5,7 +5,8 @@ import requests
 URL = "https://api.ted.europa.eu/v3/notices/search"
 
 # Byt gärna till stadssökning om du vill:
-QUERY = '(buyer-city="Göteborg" OR buyer-city="Stockholm" OR buyer-city="Malmö") AND PD>=today(-90)'
+CITIES = ["Göteborg", "Stockholm", "Malmö", "Uppsala", "Linköping", "Örebro", "Västerås", "Helsingborg", "Norrköping", "Lund"]
+QUERY = '(' + ' OR '.join(f'buyer-city="{c}"' for c in CITIES) + ') AND PD>=today(-90)'
 # QUERY = 'buyer-country="SWE" AND PD>=today(-90)'
 
 BODY = {
