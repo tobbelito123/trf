@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T12:38:59Z",
+  "generated_at": "2026-08-30T11:50:31Z",
   "query": "(buyer-city=\"Göteborg\" OR buyer-city=\"Stockholm\" OR buyer-city=\"Malmö\" OR buyer-city=\"Uppsala\" OR buyer-city=\"Linköping\" OR buyer-city=\"Örebro\" OR buyer-city=\"Västerås\" OR buyer-city=\"Helsingborg\" OR buyer-city=\"Norrköping\" OR buyer-city=\"Lund\") AND PD>=today(-90)",
   "count": 1658,
   "notices": [
