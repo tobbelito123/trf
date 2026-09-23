@@ -16,7 +16,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
 
 ## Kö
 
-1. slug: `skriva-kvalitetsdel-anbud` — status: pending
+1. slug: `skriva-kvalitetsdel-anbud` — status: published: 2026-09-23
    Arbetstitel: "Så Skriver Du Kvalitetsdelen i Ditt Anbud (Som Faktiskt Ger Poäng)"
    Vinkel: konkret hur man strukturerar och formulerar den beskrivande kvalitetsdelen så den
    är lätt att poängsätta för en upphandlare som läser hundratals anbud, inte bara "skriv bra".

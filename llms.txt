@@ -30,6 +30,9 @@ För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekom
 - `/faq.html` - vanliga frågor om tjänsten och om offentlig upphandling
 - `/kontakt.html` - kontaktuppgifter
 
+## Anbudsguider
+- `/skriva-kvalitetsdel-anbud.html` - så skriver du kvalitetsdelen i anbudet så den går att poängsätta
+
 ## Oberoende
 
 vembudar.se är inte anslutet till, sponsrat av eller ett ombud för EU, TED, Upphandlingsmyndigheten, Mercell, Opic, e-Avrop, Pabliq, Visma eller Kommers Annons.
