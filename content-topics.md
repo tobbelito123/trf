@@ -21,7 +21,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: konkret hur man strukturerar och formulerar den beskrivande kvalitetsdelen så den
    är lätt att poängsätta för en upphandlare som läser hundratals anbud, inte bara "skriv bra".
 
-2. slug: `vanliga-misstag-som-diskvalificerar-anbud` — status: pending
+2. slug: `vanliga-misstag-som-diskvalificerar-anbud` — status: published: 2026-09-29
    Arbetstitel: "Misstagen Som Diskvalificerar Annars Bra Anbud"
    Vinkel: formaliafel (missad signatur, fel format, sen inlämning), missade skallkrav, och
    varför "nästan rätt" ofta räcker för att åka ut helt i offentlig upphandling.
