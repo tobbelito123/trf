@@ -33,6 +33,7 @@ För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekom
 ## Anbudsguider
 - `/skriva-kvalitetsdel-anbud.html` - så skriver du kvalitetsdelen i anbudet så den går att poängsätta
 - `/vanliga-misstag-som-diskvalificerar-anbud.html` - misstagen som diskvalificerar annars bra anbud, formaliafel och missade skallkrav
+- `/hur-prissatta-anbud-ratt.html` - hur du prissätter ett anbud utan att underbjuda dig själv, och hur utvärderingsmodellen bör styra prisstrategin
 
 ## Oberoende
 

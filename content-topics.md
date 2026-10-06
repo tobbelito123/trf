@@ -26,7 +26,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: formaliafel (missad signatur, fel format, sen inlämning), missade skallkrav, och
    varför "nästan rätt" ofta räcker för att åka ut helt i offentlig upphandling.
 
-3. slug: `hur-prissatta-anbud-ratt` — status: pending
+3. slug: `hur-prissatta-anbud-ratt` — status: published: 2026-10-06
    Arbetstitel: "Hur Du Prissätter Ett Anbud Utan Att Underbjuda Dig Själv"
    Vinkel: balansen mellan konkurrenskraftigt pris och lönsamhet, och hur utvärderingsmodellen
    (lägsta pris vs bästa förhållande pris/kvalitet) borde styra prisstrategin.
