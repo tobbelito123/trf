@@ -3,4 +3,4 @@ Allow: /
 Disallow: /quiz/
 Disallow: /viking/
 Disallow: /cad/
-Sitemap: https://vembudar.se/sitemap.xml
+Sitemap: https://www.vembudar.se/sitemap.xml

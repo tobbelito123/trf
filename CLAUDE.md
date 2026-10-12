@@ -52,8 +52,14 @@ single-topic pages. Only change per page:
 
 - `<title>` and `<meta name="description">` — specific to the topic, description natural
   length (~150-160 chars), reads like a person wrote it.
-- `<link rel="canonical">` and `og:url` — `https://vembudar.se/<slug>.html`.
+- `<link rel="canonical">` and `og:url` — `https://www.vembudar.se/<slug>.html`.
 - `og:title` / `og:description`.
+- The `Article` JSON-LD (`datePublished`/`dateModified` = today) and the separate
+  `BreadcrumbList` JSON-LD block before `</head>`: Start (`https://www.vembudar.se/`) › Kunskap
+  (`https://www.vembudar.se/kunskap.html`) › the page's own `<h1>` and URL.
+- The visible date line straight after the `<h1>`, same markup as `kunskap.html`:
+  `<p class="page-updated" ...>Senast uppdaterad <time datetime="YYYY-MM-DD">D månad YYYY</time></p>`,
+  matching `dateModified`.
 - Body content (see style rules below), plus the internal links from step 5.
 - The "Läs vidare" list at the end, pointing to genuinely related existing pages.
 - Leave the `nav-links` in the header exactly as-is (don't add new items there — this
