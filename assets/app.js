@@ -42,9 +42,16 @@ function pdToMillis(pd){
 }
 // Deadline-strängar kan se ut som "2026-05-15 00:00:00+02:00" eller sakna tid helt.
 // Saknad deadline sorteras sist när vi sorterar "snarast först".
+// TED skickar datum och tid som listor med tidszon, så strängen blir t.ex. "2026-08-30Z 21:59:59Z"
+// eller "2026-09-03Z,2026-09-03Z 21:59:59Z,21:59:59Z". Första datumet och första tiden gäller.
 function deadlineToMillis(dl){
   if (!dl) return Infinity;
-  const t = Date.parse(dl.replace(' ', 'T'));
+  const [datePart, timePart = ''] = String(dl).split(' ');
+  const d = datePart.match(/\d{4}-\d{2}-\d{2}/);
+  if (!d) return Infinity;
+  const tm = timePart.match(/(\d{2}:\d{2}(?::\d{2})?)(Z|[+-]\d{2}:\d{2})?/);
+  const zone = (tm && tm[2]) || (datePart.match(/(Z|[+-]\d{2}:\d{2})/) || [])[1] || '+01:00';
+  const t = Date.parse(`${d[0]}T${tm ? tm[1] : '23:59:59'}${zone}`);
   return isNaN(t) ? Infinity : t;
 }
   function escapeHtml(s){
@@ -152,6 +159,57 @@ function fmtDeadline(deadlineStr) {
   }
 }
 
+// TED-titlar ser ut som "Sverige – Kategori – Själva titeln". Landet är alltid Sverige här, så det
+// skalas bort och kategorin visas som en liten etikett ovanför titeln.
+function splitTitle(t) {
+  const parts = (t || '').split(' – ');
+  if (parts.length >= 2 && /^sverige$/i.test(parts[0].trim())) parts.shift();
+  if (parts.length >= 2) {
+    const cat = parts.shift().split(':')[0].trim();
+    return { cat, title: parts.join(' – ') };
+  }
+  return { cat: null, title: parts.join(' – ') };
+}
+
+// "GÖTEBORG" -> "Göteborg"
+function niceCity(s) {
+  if (!s) return s;
+  return s === s.toUpperCase() ? s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : s;
+}
+
+const MS_DAY = 86400000;
+// "2026-10-13+02:00" -> "13 okt." (med år om det inte är i år)
+function fmtShortDate(pd) {
+  const t = pdToMillis(pd);
+  if (!t) return fmtDate(pd);
+  const d = new Date(t);
+  const opts = { day: 'numeric', month: 'short' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('sv-SE', opts);
+}
+function dueBadge(deadline) {
+  const t = deadlineToMillis(deadline);
+  if (!isFinite(t)) return '';
+  const days = Math.ceil((t - Date.now()) / MS_DAY);
+  if (t < Date.now()) return '<div class="due none">Svarstiden har gått ut</div>';
+  const date = new Date(t).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+  const cls = days <= 3 ? 'urgent' : days <= 10 ? 'soon' : '';
+  const left = days === 0 ? 'sista dagen i dag' : days === 1 ? '1 dag kvar' : `${days} dagar kvar`;
+  return `<div class="due ${cls}">Sista svarsdag <strong>${date}</strong> ${left}</div>`;
+}
+
+// "2026-10-13T14:05:32Z" -> "i dag kl. 16:05" / "i går kl. 16:05" / "13 okt. kl. 16:05"
+function fmtUpdated(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const time = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  const day = (x) => x.toLocaleDateString('sv-SE');
+  const now = new Date(), y = new Date(now - MS_DAY);
+  if (day(d) === day(now)) return `i dag kl. ${time}`;
+  if (day(d) === day(y)) return `i går kl. ${time}`;
+  return `${d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })} kl. ${time}`;
+}
+
 function fmtSEK(x) {
   try { return new Intl.NumberFormat('sv-SE', { style:'currency', currency:'SEK', maximumFractionDigits: 0 }).format(x); }
   catch { return `${Math.round(x).toLocaleString('sv-SE')} kr`; }
@@ -172,7 +230,10 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
   applyFilters();
 
   if (sortMode === 'deadline') {
-    view.sort((a, b) => deadlineToMillis(a.deadline) - deadlineToMillis(b.deadline));
+    // Snarast först bland dem som fortfarande går att svara på; passerade och saknade sist.
+    const now = Date.now();
+    const key = (x) => { const t = deadlineToMillis(x.deadline); return t < now ? Infinity : t; };
+    view.sort((a, b) => key(a) - key(b));
   } else {
     view.sort((a, b) => pdToMillis(b.pd) - pdToMillis(a.pd));
   }
@@ -186,7 +247,7 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
   const itemsToRender = view.slice(0, loadedCount); // Begränsa antalet som ritas
   // ************************************************************
 
-  countEl.textContent = `${totalInView} upphandlingar ${onlySvEl && onlySvEl.checked ? "(svensk titel)" : ""}`;
+  countEl.textContent = `${totalInView.toLocaleString("sv-SE")} ${totalInView === 1 ? "upphandling" : "upphandlingar"}${onlySvEl && onlySvEl.checked ? " med svensk titel" : ""}`;
   listEl.innerHTML = "";
 
   if (emptyEl) emptyEl.style.display = totalInView === 0 ? "" : "none";
@@ -194,30 +255,30 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
   // RENDER: Loopar bara igenom de objekt som ska visas (itemsToRender)
   for (const n of itemsToRender) {
     const amountHtml = n.amount
-      ? (n.ccy === 'SEK'
-          ? `<span class="amount">${fmtSEK(n.amount)}</span>`
-          : `<span class="amount">${n.amount.toLocaleString('sv-SE')} <span class="ccy">${n.ccy || ''}</span></span>`)
+      ? `<span class="amt">${n.ccy === 'SEK' ? fmtSEK(n.amount) : `${n.amount.toLocaleString('sv-SE')} ${n.ccy || ''}`}</span>`
       : '';
+    const { cat, title } = splitTitle(n.title);
 
     const card = document.createElement('article');
     card.className = 'card';
     card.innerHTML = `
-      <h3 class="title">${escapeHtml(n.title)} ${n.has_sv ? '' : '<span class="badge">ej sv</span>'}</h3>
-      <div class="row">
-        <div class="meta">
-  <span><strong>Datum:</strong> ${fmtDate(n.pd)}</span>
-  ${n.nd ? `<span><strong>ND:</strong> ${escapeHtml(n.nd)}</span>` : ''}
-  ${n.city ? `<span><strong>Ort:</strong> ${escapeHtml(n.city)}</span>` : ''}
-  ${n.buyer ? `<span><strong>Upphandlande enhet:</strong> ${escapeHtml(n.buyer)}</span>` : ''}
-  ${n.deadline ? `<span><strong>Sista svarsdag:</strong> ${fmtDate(n.deadline)}</span>` : ''}
-  ${n.amountText ? `<span>${n.amountText}</span>` : ''}
-</div>
+      <div class="card-top">
+        <div>
+          ${cat ? `<span class="cat">${escapeHtml(cat)}</span>` : ''}
+          <h3 class="title">${escapeHtml(title)}${n.has_sv ? '' : '<span class="badge">engelsk titel</span>'}</h3>
+        </div>
+        ${dueBadge(n.deadline)}
+      </div>
+      <div class="meta">
+        ${n.buyer ? `<span class="buyer">${escapeHtml(n.buyer)}</span>` : ''}
+        ${n.city ? `<span>${escapeHtml(niceCity(n.city))}</span>` : ''}
+        <span>Publicerad ${fmtShortDate(n.pd)}</span>
         ${amountHtml}
       </div>
       <div class="links">
-        ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">📄 PDF</a>`  : ""}
-        ${n.document_url ? `<a href="${n.document_url}" target="_blank" rel="noopener">📁 Underlag</a>` : ""}
-        ${n.submission_url ? `<a href="${n.submission_url}" target="_blank" rel="noopener">💼 Lämna anbud</a>` : ""}
+        ${n.submission_url ? `<a class="primary" href="${n.submission_url}" target="_blank" rel="noopener">Lämna anbud</a>` : ""}
+        ${n.document_url ? `<a href="${n.document_url}" target="_blank" rel="noopener">Upphandlingsdokument</a>` : ""}
+        ${n.pdf_url  ? `<a href="${n.pdf_url}"  target="_blank" rel="noopener">Annons (PDF)</a>`  : ""}
       </div>
     `;
     listEl.appendChild(card);
@@ -228,21 +289,8 @@ function render(resetLoadedCount = true) { // ********** Lade till flagga ******
     const remaining = totalInView - loadedCount;
     const loadMoreBtn = document.createElement('button');
     loadMoreBtn.id = 'load-more-btn';
-    // Lägg till inline-stil för att matcha din designfilosofi
-    loadMoreBtn.style.cssText = `
-      display: block;
-      width: 100%;
-      padding: 1rem;
-      margin-top: 20px;
-      border-radius: 10px;
-      border: 1px solid var(--link);
-      background: var(--chip);
-      color: var(--chip-fg);
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 1rem;
-    `;
-    loadMoreBtn.textContent = `Ladda fler (${remaining} kvar)`;
+    loadMoreBtn.className = 'load-more';
+    loadMoreBtn.textContent = `Visa fler (${remaining.toLocaleString('sv-SE')} till)`;
     loadMoreBtn.addEventListener('click', loadMore);
     listEl.appendChild(loadMoreBtn);
   }
@@ -279,9 +327,11 @@ async function init() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
 
-    updEl.textContent = (data.generated_at || data.generated_at_utc)
-      ? `• Uppdaterad: ${data.generated_at || data.generated_at_utc}`
-      : "";
+    const gen = data.generated_at || data.generated_at_utc;
+    updEl.textContent = "";
+    const heroStat = document.getElementById('heroStat');
+    const total = (data.notices || data.items || []).length;
+    if (heroStat && total) heroStat.textContent = `${total.toLocaleString('sv-SE')} upphandlingar${gen ? `, uppdaterad ${fmtUpdated(gen)}` : ''}`;
 
     const notices = data.notices || data.items || [];
     items = notices.map(n => {
