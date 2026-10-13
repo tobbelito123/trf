@@ -31,7 +31,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: balansen mellan konkurrenskraftigt pris och lönsamhet, och hur utvärderingsmodellen
    (lägsta pris vs bästa förhållande pris/kvalitet) borde styra prisstrategin.
 
-4. slug: `sma-foretag-vinna-upphandlingar` — status: pending
+4. slug: `sma-foretag-vinna-upphandlingar` — status: published: 2026-10-13
    Arbetstitel: "Så Konkurrerar Mindre Företag Om Offentliga Kontrakt"
    Vinkel: praktiska sätt mindre leverantörer faktiskt vinner mot stora aktörer (nischkompetens,
    lokal närvaro, mindre kontraktsvärden, anbudssamverkan).
