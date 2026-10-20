@@ -36,7 +36,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: praktiska sätt mindre leverantörer faktiskt vinner mot stora aktörer (nischkompetens,
    lokal närvaro, mindre kontraktsvärden, anbudssamverkan).
 
-5. slug: `referenser-i-anbud` — status: pending
+5. slug: `referenser-i-anbud` — status: published: 2026-10-20
    Arbetstitel: "Hur Du Väljer och Beskriver Referensuppdrag i Ett Anbud"
    Vinkel: vilka referenser som faktiskt stärker ett anbud, och hur man beskriver dem konkret
    istället för generiskt.
