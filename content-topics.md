@@ -41,7 +41,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: vilka referenser som faktiskt stärker ett anbud, och hur man beskriver dem konkret
    istället för generiskt.
 
-6. slug: `overprovning-nar-du-forlorar` — status: pending
+6. slug: `overprovning-nar-du-forlorar` — status: published: 2026-10-27
    Arbetstitel: "Du Förlorade Upphandlingen. Är Det Värt Att Begära Överprövning?"
    Vinkel: allmän, praktisk framing av vad överprövning innebär och när det är rimligt att
    överväga. INGA specifika tidsfrister, paragrafnummer eller belopp ska anges (dessa ändras
