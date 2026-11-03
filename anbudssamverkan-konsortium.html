@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Anbudssamverkan: Gå Ihop Med Andra Företag Om Ett Anbud | vembudar.se</title>
+  <meta name="description" content="Klarar ni inte kvalificeringskraven själva? Så fungerar anbudssamverkan i praktiken, när det är läge att gå ihop med andra leverantörer och vilka fallgropar ni bör undvika." />
+  <link rel="canonical" href="https://www.vembudar.se/anbudssamverkan-konsortium.html">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+  <meta name="language" content="sv">
+  <meta name="color-scheme" content="light dark">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="vembudar.se">
+  <meta property="og:title" content="Anbudssamverkan: Gå Ihop Med Andra Företag Om Ett Anbud">
+  <meta property="og:description" content="Så fungerar anbudssamverkan i praktiken, när det lönar sig och vilka fallgropar ni bör undvika." />
+  <meta property="og:url" content="https://www.vembudar.se/anbudssamverkan-konsortium.html">
+  <meta property="og:image" content="https://www.vembudar.se/assets/og-default.jpg">
+
+  <style>
+    :root{
+      --fg:#0b1320; --bg:#fff; --muted:#657189; --card:#f6f7fb; --ring:#dfe7ff; --link:#1a73e8;
+      --chip:#e8eefc; --chip-fg:#194fb0; --accent:#111827;
+      --key-highlight:#0f49a8;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --fg:#e8ecf7; --bg:#0b0f17; --muted:#9aa4b5; --card:#121828; --ring:#1e2b47; --link:#76a7ff;
+        --chip:#15213a; --chip-fg:#a8c4ff; --accent:#eef2ff;
+        --key-highlight:#a8c4ff;
+      }
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif; color:var(--fg); background:var(--bg); }
+
+    /* Header/Navigation Layout */
+    .header-content {
+      max-width:980px; margin:0 auto; padding:0 16px;
+    }
+
+    header {
+      padding:16px 0 0;
+      border-bottom: 1px solid var(--ring);
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+    }
+
+    .logo a {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      font-size: 1.2rem;
+      font-weight: 750;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -.01em;
+    }
+    .logo-mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, #1d4fd8, #0f2f86); display: grid; place-items: center; flex: none; }
+    .logo-mark svg { width: 18px; height: 18px; }
+
+    .nav-links {
+      display: none;
+    }
+
+    .nav-links.is-active {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      position: absolute;
+      top: 60px;
+      left: 0;
+      padding: 16px 16px;
+      background: var(--bg);
+      border-top: 1px solid var(--ring);
+      z-index: 10;
+    }
+
+    .nav-links.is-active a {
+      padding: 12px 16px;
+      width: 100%;
+      border-bottom: 1px solid var(--card);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--fg);
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--card);
+    }
+
+    /* Hamburgarmeny-ikon (endast CSS) */
+    .menu-icon {
+      display: block;
+      width: 28px;
+      height: 20px;
+      position: relative;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    .menu-icon span {
+      display: block;
+      height: 2px;
+      background: var(--fg);
+      position: absolute;
+      width: 100%;
+      left: 0;
+      transition: all 0.2s ease-in-out;
+    }
+    .menu-icon span:nth-child(1) { top: 0px; }
+    .menu-icon span:nth-child(2) { top: 9px; }
+    .menu-icon span:nth-child(3) { top: 18px; }
+
+    /* Stilar för större skärmar (Desktop) */
+    @media (min-width: 768px) {
+      .menu-icon {
+        display: none;
+      }
+      .nav-links {
+        display: flex;
+        gap: 1rem;
+      }
+      header {
+        padding-top: 32px;
+        border-bottom: none;
+      }
+      .nav-bar {
+        padding-bottom: 24px;
+      }
+      .hero {
+        padding: 0 0 16px;
+      }
+      /* Innehållsförteckning som flyter till vänster på desktop */
+      .toc {
+        float: left;
+        width: 250px;
+        margin-right: 30px;
+        position: sticky;
+        top: 20px;
+        padding: 15px;
+        border: 1px solid var(--ring);
+        border-radius: 8px;
+        background: var(--card);
+      }
+      .content-body {
+        margin-left: 280px; /* Gör plats för ToC */
+      }
+    }
+    /* Stilar för mobil (ToC döljs eller blir fullbredd) */
+    @media (max-width: 767px) {
+      .toc {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid var(--ring);
+        border-radius: 8px;
+        background: var(--card);
+      }
+    }
+
+
+    /* Huvudinnehållsstruktur */
+    main,footer{ max-width:980px; margin:0 auto; padding:0 16px }
+
+    .hero {
+      padding: 24px 0 32px;
+      text-align: center;
+    }
+
+    h1{ font-size:clamp(30px,5vw,44px); line-height:1.1; margin:0 0 10px }
+    h2 { font-size: 1.8rem; margin: 35px 0 15px; border-bottom: 2px solid var(--ring); padding-bottom: 5px; }
+    h3 { font-size: 1.3rem; margin: 25px 0 10px; color: var(--key-highlight); }
+
+    .toc h3 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-top: 0;
+    }
+
+    .toc ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0;
+    }
+
+    .toc ul a {
+      color: var(--link);
+      text-decoration: none;
+      display: block;
+      padding: 5px 0;
+      font-size: 0.95rem;
+    }
+    .toc ul a:hover {
+        text-decoration: underline;
+    }
+
+    p.lead{ margin:.5rem 0 0; color:var(--muted); font-size:1.15rem; }
+
+    .lead strong {
+      color: var(--key-highlight);
+      font-weight: 700;
+    }
+
+    .content-article {
+        line-height: 1.7;
+    }
+
+    .content-article p, .content-article li {
+        color: var(--fg);
+    }
+
+    .content-article ul {
+        margin: 15px 0;
+        padding-left: 20px;
+    }
+
+    footer{ color:var(--muted); font-size:.95rem; padding:22px 16px 40px; border-top:1px dotted var(--ring) }
+    a{ color:var(--link) }
+    .muted{ color:var(--muted) }
+    .footer-grid{ display:grid; grid-template-columns:1fr; gap:20px; margin:20px 0 }
+    @media (min-width:640px){ .footer-grid{ grid-template-columns:2fr 1fr 1fr } }
+    .footer-col strong{ color:var(--fg) }
+    .footer-col ul{ list-style:none; padding:0; margin:.5rem 0 0 }
+    .footer-col li{ margin:.3rem 0 }
+    .footer-bottom{ border-top:1px dotted var(--ring); padding-top:14px }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Start",
+      "item": "https://www.vembudar.se/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Kunskap",
+      "item": "https://www.vembudar.se/kunskap.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Anbudssamverkan: Gå Ihop Med Andra Företag Om Ett Anbud",
+      "item": "https://www.vembudar.se/anbudssamverkan-konsortium.html"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <nav class="nav-bar" aria-label="Huvudnavigering">
+        <div class="logo">
+          <a href="/"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>vembudar.se</a>
+        </div>
+
+        <button class="menu-icon" aria-expanded="false" aria-controls="nav-menu" aria-label="Öppna meny">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links" id="nav-menu">
+          <a href="/">Upphandlingar</a>
+          <a href="/jamfor-upphandlingstjanster.html">Jämförelser</a>
+          <a href="/ordlista.html">Ordlista</a>
+          <a href="/faq.html">FAQ</a>
+          <a href="/kunskap.html">Kunskap</a>
+          <a href="/kontakt.html">Kontakt</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main role="article" aria-label="Guide till anbudssamverkan och konsortier">
+    <div class="header-content">
+      <div class="hero">
+        <h1>Anbudssamverkan: Gå Ihop Med Andra Företag Om Ett Anbud</h1>
+        <p class="page-updated" style="color:var(--muted);font-size:.9rem;margin:.25rem 0 1rem">Senast uppdaterad <time datetime="2026-11-03">3 november 2026</time></p>
+        <p class="lead">
+          Ibland är hindret inte konkurrensen, utan att ni helt enkelt inte klarar
+          kvalificeringskraven på egen hand. Då kan det löna sig att gå in i upphandlingen
+          tillsammans med ett eller flera andra företag istället för att hoppa över den helt.
+          Här är hur anbudssamverkan fungerar i praktiken och vad som brukar gå snett.
+        </p>
+      </div>
+    </div>
+
+    <div class="header-content content-article">
+
+      <nav class="toc" aria-label="Sidans innehållsförteckning">
+        <h3>Innehåll</h3>
+        <ul>
+          <li><a href="#vad-ar-samverkan">1. Vad anbudssamverkan innebär i praktiken</a></li>
+          <li><a href="#nar-ga-ihop">2. När det är läge att gå ihop med andra</a></li>
+          <li><a href="#fallgropar">3. Fallgroparna i samarbetet</a></li>
+          <li><a href="#satta-upp">4. Hur ni sätter upp det i anbudet</a></li>
+        </ul>
+      </nav>
+
+      <article class="content-body">
+
+        <h2 id="vad-ar-samverkan">1. Vad anbudssamverkan innebär i praktiken</h2>
+        <p>Anbudssamverkan betyder att två eller flera företag lämnar in ett gemensamt anbud
+        istället för att konkurrera separat eller stå utanför upphandlingen helt. Upphandlande
+        myndigheter är van vid formen och den är fullt accepterad, så länge förfrågningsunderlaget
+        inte uttryckligen förbjuder den för den aktuella upphandlingen. Vad som skiljer sig från fall
+        till fall är hur ansvaret ska fördelas mellan parterna: ibland utses ett bolag till
+        huvudanbudsgivare som skriver kontraktet och tar in de andra som underleverantörer, ibland
+        lämnas anbudet av alla parter gemensamt med ett delat ansvar gentemot beställaren.</p>
+
+        <p>Vilken konstruktion som fungerar bäst, och exakt vilka krav förfrågningsunderlaget
+        ställer på en sådan gruppering, varierar mellan upphandlingar. Läs alltid det specifika
+        underlaget noga på den punkten, och stäm av med en jurist om något är oklart innan ni
+        bygger hela anbudet runt ett antagande om hur ansvarsfördelningen får se ut.</p>
+
+        <h2 id="nar-ga-ihop">2. När det är läge att gå ihop med andra</h2>
+        <p>Den vanligaste anledningen är att ni täcker olika delar av det som efterfrågas. Ett
+        företag har rätt kapacitet och referenser men saknar en viss certifiering, ett annat har
+        precis den certifieringen men inte volymen. Tillsammans klarar ni kvalificeringskraven som
+        ingen av er klarar ensam. Samma logik gäller geografisk täckning: en upphandling som spänner
+        över flera orter kan kräva en lokal närvaro som bara går att lösa genom att ta in en partner
+        som redan finns på plats. Vi går igenom fler sådana vägar in i <a
+        href="/sma-foretag-vinna-upphandlingar.html">vår guide om hur mindre leverantörer konkurrerar
+        om offentliga kontrakt</a>.</p>
+
+        <p>Var mer försiktig när tanken bakom samarbetet egentligen är att slippa konkurrera mot
+        varandra. Att gå ihop med en direkt konkurrent bara för att undvika att möta varandra i
+        samma upphandling är inte samma sak som att komplettera varandras kompetens, och kan väcka
+        frågor om konkurrens som ni bör ha klart för er innan ni går vidare. Komplementaritet, inte
+        bekvämlighet, är det som gör ett samarbete hållbart över tid.</p>
+
+        <h2 id="fallgropar">3. Fallgroparna i samarbetet</h2>
+        <p>Det som oftast går fel handlar inte om själva upphandlingen utan om hur dåligt
+        förberedda parterna var på att samarbeta. Reda ut rollerna tidigt: vem levererar vad, vem
+        är kontraktspart gentemot beställaren, och vem står för vilken ekonomisk risk om något går
+        snett under avtalstiden. Lämna inte den diskussionen till efter att ni vunnit.</p>
+
+        <p>En annan vanlig miss är att anta att det räcker att en av parterna uppfyller
+        kvalificeringskraven. I många upphandlingar krävs att samtliga parter i grupperingen
+        uppfyller grundläggande krav, medan det är den samlade kapaciteten som räknas för annat,
+        som teknisk förmåga eller omsättning. Vilket som gäller står i underlaget, och det skiljer
+        sig mellan upphandlingar, så gå igenom den punkten tillsammans med alla parter innan ni
+        skriver under något.</p>
+
+        <p>Räkna också med att samordning tar tid som ett ensamt anbud inte kräver. Om ni börjar
+        prata ihop er om roller och ansvar först några dagar innan sista svarsdag blir resultatet
+        ofta ett anbud som känns hopskarvat, med otydligheter som en upphandlare lätt snubblar på
+        vid granskningen.</p>
+
+        <h2 id="satta-upp">4. Hur ni sätter upp det i anbudet</h2>
+        <p>Beskriv samarbetsformen tydligt i anbudet: vilka företag ingår, vem som är
+        kontrakterande part, och hur ansvaret är fördelat om det inte redan framgår av
+        förfrågningsunderlagets egna formulär. Många upphandlingar har särskilda bilagor för just
+        detta, fyll i dem exakt som efterfrågat snarare än att beskriva samarbetet fritt i löptext
+        om underlaget ber om ett visst format.</p>
+
+        <p>Varje part bör dessutom bidra med sin egen dokumentation av kapacitet och erfarenhet,
+        inte bara den part som råkar skriva anbudet. Gäller det referensuppdrag, se till att varje
+        företags bidrag beskrivs lika konkret som om ni lämnat anbud ensamma, enligt samma
+        principer som i <a href="/referenser-i-anbud.html">vår guide om hur du väljer och beskriver
+        referensuppdrag i ett anbud</a>. Ett anbud där en partners roll känns otydligt beskriven
+        väcker onödiga frågor hos den som utvärderar det.</p>
+
+        <p>Skriv slutligen ett internt samarbetsavtal mellan parterna innan anbudet lämnas in,
+        oavsett vad förfrågningsunderlaget formellt kräver. Reglera där fördelning av arbete,
+        betalning och ansvar om kontraktet vinns, så att ni inte behöver förhandla fram det under
+        tidspress efter tilldelningsbeslutet, när ett eventuellt avtal redan ska vara klart att
+        skriva under.</p>
+
+        <h2 id="las-vidare">Läs vidare</h2>
+        <ul>
+          <li><a href="/kunskap.html">Guide till offentlig upphandling och LOU</a></li>
+          <li><a href="/ordlista.html">Ordlista: alla begrepp inom offentlig upphandling</a></li>
+          <li><a href="/sma-foretag-vinna-upphandlingar.html">Så konkurrerar mindre företag om offentliga kontrakt</a></li>
+          <li><a href="/referenser-i-anbud.html">Hur du väljer och beskriver referensuppdrag i ett anbud</a></li>
+          <li><a href="/vanliga-misstag-som-diskvalificerar-anbud.html">Misstagen som diskvalificerar annars bra anbud</a></li>
+        </ul>
+
+        <p class="muted" style="text-align: center; margin-top: 50px;">***</p>
+
+        <p>Letar ni efter en upphandling att gå ihop om?
+        <a href="/">Sök bland aktuella upphandlingar här</a> eller
+        <a href="/kontakt.html">kontakta oss</a> med dina frågor!</p>
+
+      </article>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <strong>vembudar.se</strong>
+        <p class="muted">Gratis bevakning av offentliga upphandlingar i Sverige, byggt på TED. Uppdateras dagligen.</p>
+      </div>
+      <div class="footer-col">
+        <strong>Resurser</strong>
+        <ul>
+          <li><a href="/kunskap.html">Kunskap & guider</a></li>
+          <li><a href="/ordlista.html">Ordlista</a></li>
+          <li><a href="/jamfor-upphandlingstjanster.html">Jämför tjänster</a></li>
+          <li><a href="/faq.html">Vanliga frågor</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <strong>Kontakt</strong>
+        <ul>
+          <li><a href="/kontakt.html">Kontakta oss</a></li>
+          <li><a href="mailto:info@vembudar.se">info@vembudar.se</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted footer-bottom">Källa: <a href="https://ted.europa.eu/en/expert-search" target="_blank" rel="noopener">TED expert search</a>, Upphandlingsmyndigheten. vembudar.se är en oberoende tjänst och är inte anslutet till EU, TED eller Upphandlingsmyndigheten.</p>
+  </footer>
+
+<script src="assets/app.js" defer></script>
+
+<script>
+  function setupMobileMenu() {
+    const menuButton = document.querySelector('.menu-icon');
+    const navLinks = document.getElementById('nav-menu');
+
+    if (menuButton && navLinks) {
+      menuButton.addEventListener('click', () => {
+        navLinks.classList.toggle('is-active');
+        const isExpanded = menuButton.getAttribute('aria-expanded') === 'true' || false;
+        menuButton.setAttribute('aria-expanded', !isExpanded);
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', setupMobileMenu);
+</script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Anbudssamverkan: Gå Ihop Med Andra Företag Om Ett Anbud",
+  "image": "https://www.vembudar.se/assets/og-default.jpg",
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "author": {
+    "@type": "Organization",
+    "name": "vembudar.se"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "vembudar.se",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.vembudar.se/assets/logo.png"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "url": "https://www.vembudar.se/anbudssamverkan-konsortium.html"
+  }
+}
+</script>
+</body>
+</html>

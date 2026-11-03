@@ -48,7 +48,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    och varierar) — hänvisa istället till att kontrollera exakta regler hos Upphandlingsmyndigheten
    eller en jurist för det specifika fallet.
 
-7. slug: `anbudssamverkan-konsortium` — status: pending
+7. slug: `anbudssamverkan-konsortium` — status: published: 2026-11-03
    Arbetstitel: "Anbudssamverkan: Att Gå Ihop Med Andra Företag Om Ett Anbud"
    Vinkel: hur och varför mindre leverantörer samarbetar för att klara kvalificeringskrav de
    inte når själva, generellt hållet.
