@@ -38,6 +38,7 @@ För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekom
 - `/referenser-i-anbud.html` - hur du väljer relevanta referensuppdrag och beskriver dem konkret istället för generiskt
 - `/overprovning-nar-du-forlorar.html` - vad överprövning faktiskt innebär, när det är rimligt att överväga och vad det inte löser
 - `/anbudssamverkan-konsortium.html` - hur och när leverantörer går ihop och lämnar gemensamt anbud för att klara kvalificeringskrav de inte når själva
+- `/checklista-infor-anbudsinlamning.html` - sista genomgången innan anbudet skickas in: format, skallkrav, bilagor, signaturer och inlämningssätt
 
 ## Oberoende
 

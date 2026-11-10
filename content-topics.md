@@ -53,7 +53,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: hur och varför mindre leverantörer samarbetar för att klara kvalificeringskrav de
    inte når själva, generellt hållet.
 
-8. slug: `checklista-infor-anbudsinlamning` — status: pending
+8. slug: `checklista-infor-anbudsinlamning` — status: published: 2026-11-10
    Arbetstitel: "Checklistan Innan Du Skickar In Anbudet"
    Vinkel: en konkret, praktisk sista-koll-lista (skallkrav, bilagor, signaturer, format,
    tidsstämpel) innan inlämning.
