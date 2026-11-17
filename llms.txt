@@ -39,6 +39,7 @@ För heltäckande bevakning i hela Sverige, inklusive direktupphandlingar, rekom
 - `/overprovning-nar-du-forlorar.html` - vad överprövning faktiskt innebär, när det är rimligt att överväga och vad det inte löser
 - `/anbudssamverkan-konsortium.html` - hur och när leverantörer går ihop och lämnar gemensamt anbud för att klara kvalificeringskrav de inte når själva
 - `/checklista-infor-anbudsinlamning.html` - sista genomgången innan anbudet skickas in: format, skallkrav, bilagor, signaturer och inlämningssätt
+- `/hur-lasa-forfragningsunderlag-ratt.html` - metodisk genomläsning av förfrågningsunderlaget: kravspecifikation, kvalificeringskrav, tilldelningskriterier och administrativa krav var för sig
 
 ## Oberoende
 

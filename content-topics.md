@@ -58,7 +58,7 @@ upphandling är, det täcks redan av `/kunskap.html` och `/ordlista.html`.
    Vinkel: en konkret, praktisk sista-koll-lista (skallkrav, bilagor, signaturer, format,
    tidsstämpel) innan inlämning.
 
-9. slug: `hur-lasa-forfragningsunderlag-ratt` — status: pending
+9. slug: `hur-lasa-forfragningsunderlag-ratt` — status: published: 2026-11-17
    Arbetstitel: "Så Läser Du Ett Förfrågningsunderlag Utan Att Missa Något"
    Vinkel: metodisk genomläsning (kravspecifikation, kvalificeringskrav, tilldelningskriterier,
    administrativa krav var för sig) istället för att läsa hela dokumentet linjärt en gång.
